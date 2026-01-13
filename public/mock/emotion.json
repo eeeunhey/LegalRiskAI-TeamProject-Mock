@@ -1,0 +1,35 @@
+{
+    "run_id": "run-003",
+    "case_id": "case-001",
+    "stage": "위협 및 압박",
+    "aggression_score": 88,
+    "escalation_speed": "fast",
+    "trend": [
+        {
+            "t": "T-3",
+            "value": 62
+        },
+        {
+            "t": "T-2",
+            "value": 74
+        },
+        {
+            "t": "T-1",
+            "value": 83
+        },
+        {
+            "t": "T0",
+            "value": 88
+        }
+    ],
+    "emotion_keywords": [
+        "이의제기",
+        "기각",
+        "합의하자",
+        "부당",
+        "강경대응",
+        "책임",
+        "손해",
+        "고소"
+    ]
+}

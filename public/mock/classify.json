@@ -1,0 +1,27 @@
+{
+    "run_id": "run-001",
+    "case_id": "case-001",
+    "top_label": "Consumer",
+    "scores": [
+        {
+            "label": "Consumer",
+            "score": 0.92
+        },
+        {
+            "label": "Contract",
+            "score": 0.06
+        },
+        {
+            "label": "Administrative",
+            "score": 0.02
+        }
+    ],
+    "keywords": [
+        "소비자보호법",
+        "환불 거부",
+        "전자상거래",
+        "계약 해지",
+        "부당 청구"
+    ],
+    "explanation": "환불/청약철회/표시·광고 분쟁 패턴이 강하며 소비자 보호 관련 쟁점이 핵심입니다. 특히 전자상거래법 제17조(청약철회)와 소비자기본법 제16조(피해구제)가 주요 적용 법률로 판단됩니다."
+}
