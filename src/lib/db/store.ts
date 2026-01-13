@@ -486,7 +486,7 @@ class DBStore {
     }
 
     // ==================== Sample Data for Display ====================
-    getSampleRecords(tableName: string, limit: number = 5): Record<string, unknown>[] {
+    getSampleRecords(tableName: string, limit: number = 5): any[] {
         switch (tableName) {
             case 'users':
                 return Array.from(this.users.values()).slice(0, limit);

@@ -4,7 +4,7 @@ interface Stage {
 }
 
 interface ProgressBarProps {
-    stages: Stage[];
+    stages?: Stage[];
     currentStage: string;
     className?: string;
 }

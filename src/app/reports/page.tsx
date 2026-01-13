@@ -209,7 +209,7 @@ export default function ReportsPage() {
 
                             {/* Analysis Sections */}
                             {getIncludedAnalysisTypes(selectedReport).map((type, idx) => {
-                                let resultData: Record<string, unknown> | null = null;
+                                let resultData: any | null = null;
 
                                 // Get result data based on type
                                 selectedReport.included_run_ids.forEach(runId => {

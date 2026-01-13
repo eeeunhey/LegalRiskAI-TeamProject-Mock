@@ -4,18 +4,16 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Scale, Mail, Lock, Eye, EyeOff, UserPlus, AlertCircle, User, CheckCircle } from 'lucide-react';
-import { useAuth } from '@/contexts';
 
 export default function SignupPage() {
     const router = useRouter();
-    const { signup, loading } = useAuth();
-
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const passwordChecks = [
         { label: '최소 6자 이상', valid: password.length >= 6 },
@@ -41,45 +39,35 @@ export default function SignupPage() {
             return;
         }
 
-        const result = await signup(email, password, name);
-
-        if (result.success) {
-            router.push('/dashboard');
-        } else {
-            setError(result.error || '회원가입에 실패했습니다.');
-        }
+        setLoading(true);
+        await new Promise(resolve => setTimeout(resolve, 800));
+        router.push('/dashboard');
     };
 
     return (
         <div className="min-h-[calc(100vh-8rem)] flex items-center justify-center px-4 py-12">
             <div className="w-full max-w-md">
-                {/* Logo */}
                 <div className="text-center mb-8">
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 mb-4 shadow-lg">
                         <Scale className="w-8 h-8 text-white" />
                     </div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <h1 className="text-2xl font-bold text-gray-900">
                         LegalRisk <span className="text-primary-600">AI</span>
                     </h1>
-                    <p className="text-gray-500 dark:text-gray-400 mt-2">새 계정을 만드세요</p>
+                    <p className="text-gray-500 mt-2">새 계정을 만드세요</p>
                 </div>
 
-                {/* Signup Form */}
-                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xl p-8">
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-xl p-8">
                     <form onSubmit={handleSubmit} className="space-y-5">
-                        {/* Error Message */}
                         {error && (
-                            <div className="flex items-center gap-2 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400 text-sm">
+                            <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
                                 <AlertCircle className="w-5 h-5 flex-shrink-0" />
                                 {error}
                             </div>
                         )}
 
-                        {/* Name */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                이름
-                            </label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">이름</label>
                             <div className="relative">
                                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                                 <input
@@ -87,16 +75,13 @@ export default function SignupPage() {
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     placeholder="이름을 입력하세요"
-                                    className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                 />
                             </div>
                         </div>
 
-                        {/* Email */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                이메일
-                            </label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">이메일</label>
                             <div className="relative">
                                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                                 <input
@@ -104,16 +89,13 @@ export default function SignupPage() {
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder="이메일을 입력하세요"
-                                    className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                 />
                             </div>
                         </div>
 
-                        {/* Password */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                비밀번호
-                            </label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">비밀번호</label>
                             <div className="relative">
                                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                                 <input
@@ -121,23 +103,20 @@ export default function SignupPage() {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="비밀번호를 입력하세요"
-                                    className="w-full pl-10 pr-12 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                    className="w-full pl-10 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                                 >
                                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                 </button>
                             </div>
                         </div>
 
-                        {/* Confirm Password */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                비밀번호 확인
-                            </label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">비밀번호 확인</label>
                             <div className="relative">
                                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                                 <input
@@ -145,24 +124,20 @@ export default function SignupPage() {
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
                                     placeholder="비밀번호를 다시 입력하세요"
-                                    className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                 />
                             </div>
                         </div>
 
-                        {/* Password Requirements */}
                         <div className="space-y-2">
                             {passwordChecks.map((check, idx) => (
                                 <div key={idx} className="flex items-center gap-2 text-sm">
-                                    <CheckCircle className={`w-4 h-4 ${check.valid ? 'text-green-500' : 'text-gray-300 dark:text-gray-600'}`} />
-                                    <span className={check.valid ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}>
-                                        {check.label}
-                                    </span>
+                                    <CheckCircle className={`w-4 h-4 ${check.valid ? 'text-green-500' : 'text-gray-300'}`} />
+                                    <span className={check.valid ? 'text-green-600' : 'text-gray-400'}>{check.label}</span>
                                 </div>
                             ))}
                         </div>
 
-                        {/* Submit Button */}
                         <button
                             type="submit"
                             disabled={loading}
@@ -182,8 +157,7 @@ export default function SignupPage() {
                         </button>
                     </form>
 
-                    {/* Login Link */}
-                    <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-6">
+                    <p className="text-center text-sm text-gray-500 mt-6">
                         이미 계정이 있으신가요?{' '}
                         <Link href="/login" className="text-primary-600 hover:text-primary-500 font-medium">
                             로그인
