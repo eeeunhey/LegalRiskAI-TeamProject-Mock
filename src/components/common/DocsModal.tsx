@@ -1652,77 +1652,48 @@ export default function DocsModal({ isOpen, onClose, featureName }: DocsModalPro
             });
         }
 
-        // Selected features - split into multiple fields if needed
-        const checkedChunks = chunkItems(checkedFeatures);
-        if (checkedChunks.length === 0) {
-            fields.push({
-                name: `✅ 선택된 기능 (0개)`,
-                value: '없음',
-                inline: false
-            });
-        } else {
-            checkedChunks.forEach((chunk, idx) => {
-                fields.push({
-                    name: idx === 0 ? `✅ 선택된 기능 (${checkedFeatures.length}개)` : `✅ 선택된 기능 (계속)`,
-                    value: chunk.join('\n'),
-                    inline: false
-                });
-            });
-        }
+        // Group checked features by category for table format
+        const groupedFeatures = checkedFeatures.reduce((acc, item) => {
+            const category = item.category || '기타';
+            if (!acc[category]) acc[category] = [];
+            acc[category].push(item);
+            return acc;
+        }, {} as Record<string, ChecklistItem[]>);
 
-        // Unchecked features - split into multiple fields if needed
-        const uncheckedChunks = chunkItems(uncheckedFeatures);
-        if (uncheckedChunks.length === 0) {
-            fields.push({
-                name: `⏳ 미선택 기능 (0개)`,
-                value: '없음',
-                inline: false
-            });
-        } else {
-            uncheckedChunks.forEach((chunk, idx) => {
-                fields.push({
-                    name: idx === 0 ? `⏳ 미선택 기능 (${uncheckedFeatures.length}개)` : `⏳ 미선택 기능 (계속)`,
-                    value: chunk.join('\n'),
-                    inline: false
-                });
-            });
-        }
+        // Create table-style output for each category
+        Object.entries(groupedFeatures).forEach(([category, items]) => {
+            // Create table header
+            let tableContent = '```\n';
+            tableContent += '┌─────────────────────────────────────────────────┐\n';
+            tableContent += `│ 📂 ${category.padEnd(44)}│\n`;
+            tableContent += '├───────────────────────┬─────────────────────────┤\n';
+            tableContent += '│ 기능                  │ 예정일                  │\n';
+            tableContent += '├───────────────────────┼─────────────────────────┤\n';
 
-        // Completed tests
-        const completedTestChunks = chunkItems(completedTests.map(tc => ({ title: `✓ ${tc.title} [${tc.priority}]` })));
-        if (completedTestChunks.length === 0) {
-            fields.push({
-                name: `🧪 완료된 테스트 (0/${allTestCases.length})`,
-                value: '없음',
-                inline: false
+            items.forEach((item) => {
+                const title = item.title.length > 20 ? item.title.slice(0, 18) + '..' : item.title.padEnd(20);
+                const deadline = itemDeadlines[item.id] || '-';
+                const deadlinePad = deadline.padEnd(22);
+                tableContent += `│ ${title} │ ${deadlinePad} │\n`;
             });
-        } else {
-            completedTestChunks.forEach((chunk, idx) => {
-                fields.push({
-                    name: idx === 0 ? `🧪 완료된 테스트 (${completedTests.length}/${allTestCases.length})` : `🧪 완료된 테스트 (계속)`,
-                    value: chunk.join('\n'),
-                    inline: false
-                });
-            });
-        }
 
-        // Pending tests
-        const pendingTestChunks = chunkItems(pendingTests);
-        if (pendingTestChunks.length === 0) {
+            tableContent += '└───────────────────────┴─────────────────────────┘\n';
+            tableContent += '```';
+
             fields.push({
-                name: `🔬 미완료 테스트 (0개)`,
-                value: '없음',
+                name: `📌 ${category} (${items.length}개)`,
+                value: tableContent,
                 inline: false
             });
-        } else {
-            pendingTestChunks.forEach((chunk, idx) => {
-                fields.push({
-                    name: idx === 0 ? `🔬 미완료 테스트 (${pendingTests.length}개)` : `🔬 미완료 테스트 (계속)`,
-                    value: chunk.join('\n'),
-                    inline: false
-                });
-            });
-        }
+        });
+
+        // Summary field
+        fields.push({
+            name: '📊 요약',
+            value: `✅ 총 **${checkedFeatures.length}개** 기능 선택\n` +
+                `📂 **${Object.keys(groupedFeatures).length}개** 카테고리`,
+            inline: false
+        });
 
         // Discord Embed 형식으로 메시지 구성 (최대 25개 fields)
         const embed = {
