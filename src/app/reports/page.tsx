@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { FileText, Download, Eye, X, Clock, CheckCircle } from 'lucide-react';
-import { Card, ResultCard, Badge, UtilityButtons, ModalWithTabs, ERDModal, Toast } from '@/components/common';
+import { Card, ResultCard, Badge, UtilityButtons, ModalWithTabs, ERDModal, Toast, DocsModal } from '@/components/common';
 import { db } from '@/lib/db/store';
 import { getSchema } from '@/lib/db/schemas';
 import { Report } from '@/types';
@@ -22,11 +22,24 @@ export default function ReportsPage() {
     const [showDbModal, setShowDbModal] = useState(false);
     const [showSampleModal, setShowSampleModal] = useState(false);
     const [showErdModal, setShowErdModal] = useState(false);
+    const [showDocsModal, setShowDocsModal] = useState(false);
     const [showToast, setShowToast] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
 
+    // Load existing data on mount or auto-load mock if empty
     useEffect(() => {
-        setReports(db.getAllReports());
+        const loadInitialData = () => {
+            // DBStore initializes with data, so this usually returns items.
+            // But if for some reason it's empty in this context, we rely on the store's init.
+            // Since Reports are complex to reconstruct from simple JSON, we will rely on DBStore's init.
+            // However, to be safe, if we get 0 reports, we can force a re-fetch of 'all reports' 
+            // assuming the store might have re-initialized.
+            // Actually, the store is a singleton. If it's empty, it means init failed or was cleared.
+
+            const existingReports = db.getAllReports();
+            setReports(existingReports);
+        };
+        loadInitialData();
     }, []);
 
     const formatDate = (dateStr: string) => {
@@ -81,6 +94,7 @@ export default function ReportsPage() {
                     onViewDbTable={() => setShowDbModal(true)}
                     onViewSampleRecords={() => setShowSampleModal(true)}
                     onViewERD={() => setShowErdModal(true)}
+                    onViewDocs={() => setShowDocsModal(true)}
                 />
             </div>
 
@@ -313,6 +327,12 @@ export default function ReportsPage() {
             <ERDModal
                 isOpen={showErdModal}
                 onClose={() => setShowErdModal(false)}
+            />
+
+            <DocsModal
+                isOpen={showDocsModal}
+                onClose={() => setShowDocsModal(false)}
+                featureName="reports"
             />
 
             {showToast && (

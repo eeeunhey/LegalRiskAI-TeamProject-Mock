@@ -27,12 +27,36 @@ export default function ClassifyPage() {
     const [showToast, setShowToast] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
 
-    // Load existing data on mount
+    // Load existing data on mount or auto-load mock if empty
     useEffect(() => {
-        const existingResults = db.getAllClassificationResults();
-        if (existingResults.length > 0) {
-            setResult(existingResults[0]);
-        }
+        const loadInitialData = async () => {
+            const existingResults = db.getAllClassificationResults();
+            if (existingResults.length > 0) {
+                setResult(existingResults[0]);
+            } else {
+                // If no data exists (e.g. hard refresh), restore from mock
+                try {
+                    const response = await fetch('/mock/classify.json');
+                    const data = await response.json();
+
+                    // Create a dummy run for restoration
+                    const caseRecord = db.createCase('복구된 분쟁 사례', '자동 복구된 샘플 데이터입니다.', 'consumer');
+                    const run = db.createAnalysisRun(caseRecord.case_id, 'CLASSIFY', 'Sample Text');
+
+                    const resultData: DisputeClassification = {
+                        ...data,
+                        run_id: run.run_id,
+                    };
+
+                    db.saveClassificationResult(resultData);
+                    db.completeAnalysisRun(run.run_id, true, 0);
+                    setResult(resultData);
+                } catch (e) {
+                    console.error("Failed to restore initial data", e);
+                }
+            }
+        };
+        loadInitialData();
     }, []);
 
     const handleSampleInput = () => {
@@ -235,7 +259,6 @@ export default function ClassifyPage() {
                 isOpen={showDocsModal}
                 onClose={() => setShowDocsModal(false)}
                 featureName="classify"
-                featureDescription="분쟁 유형 분류 AI"
             />
 
             {showToast && (

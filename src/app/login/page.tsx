@@ -4,14 +4,12 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Scale, Mail, Lock, Eye, EyeOff, LogIn, AlertCircle } from 'lucide-react';
-
-const mockUsers = [
-    { email: 'admin@legalrisk.ai', password: 'admin123', name: '관리자', role: 'admin' },
-    { email: 'user@legalrisk.ai', password: 'user123', name: '홍길동', role: 'user' },
-];
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginPage() {
     const router = useRouter();
+    const { login } = useAuth();
+
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -22,22 +20,30 @@ export default function LoginPage() {
         e.preventDefault();
         setError('');
 
-        if (!email || !password) {
+        const cleanEmail = email.trim();
+        const cleanPassword = password.trim();
+
+        if (!cleanEmail || !cleanPassword) {
             setError('이메일과 비밀번호를 입력해주세요.');
             return;
         }
 
         setLoading(true);
+        // Simulate network delay
         await new Promise(resolve => setTimeout(resolve, 800));
 
-        const found = mockUsers.find(u => u.email === email && u.password === password);
+        // Demo Authentication Logic
+        if ((cleanEmail === 'admin@legalrisk.ai' && cleanPassword === 'admin123') ||
+            (cleanEmail === 'user@legalrisk.ai' && cleanPassword === 'user123')) {
+            const role = cleanEmail.includes('admin') ? 'admin' : 'user';
+            login(cleanEmail, role);
 
-        if (found) {
-            router.push('/dashboard');
+            // Force navigation to ensure update
+            window.location.href = '/dashboard';
         } else {
             setError('이메일 또는 비밀번호가 올바르지 않습니다.');
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     return (

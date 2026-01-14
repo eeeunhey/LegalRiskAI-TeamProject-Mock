@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Shield, Home, ArrowLeft, Users, FileText, BarChart3, Settings } from 'lucide-react';
+import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard';
 
 export default function AdminPage() {
     const adminMenus = [
@@ -40,11 +41,10 @@ export default function AdminPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {adminMenus.map((menu, idx) => {
                     const Icon = menu.icon;
-                    return (
-                        <div
-                            key={idx}
-                            className="p-6 bg-white rounded-xl border border-gray-200 hover:border-purple-300 hover:shadow-lg transition-all cursor-pointer"
-                        >
+                    const isUserMenu = menu.title === '사용자 관리';
+
+                    const CardContent = (
+                        <div className={`p-6 bg-white rounded-xl border border-gray-200 hover:border-purple-300 hover:shadow-lg transition-all cursor-pointer h-full`}>
                             <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center mb-4">
                                 <Icon className="w-6 h-6 text-purple-600" />
                             </div>
@@ -61,7 +61,40 @@ export default function AdminPage() {
                             )}
                         </div>
                     );
+
+                    if (isUserMenu) {
+                        return (
+                            <Link key={idx} href="/admin/users" className="block h-full">
+                                {CardContent}
+                            </Link>
+                        );
+                    }
+
+                    return (
+                        <div key={idx} className="block h-full">
+                            {CardContent}
+                        </div>
+                    );
                 })}
+            </div>
+
+            {/* Dashboard Mockup */}
+            <div className="mt-12 border-t border-gray-200 pt-8">
+                <AnalyticsDashboard />
+            </div>
+
+            <div className="mb-8 mt-8">
+                <Link href="/errors" className="block p-6 bg-white rounded-xl border border-gray-200 hover:border-red-300 hover:shadow-lg transition-all">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center">
+                            <Shield className="w-6 h-6 text-red-600" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-semibold text-gray-900 mb-1">에러 페이지 예시 보기</h3>
+                            <p className="text-sm text-gray-500">404, 500 등 다양한 에러 상황에 대한 디자인을 미리 확인합니다.</p>
+                        </div>
+                    </div>
+                </Link>
             </div>
 
             <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">

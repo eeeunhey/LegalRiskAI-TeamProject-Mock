@@ -26,15 +26,38 @@ export default function StrategyPage() {
     const [showDbModal, setShowDbModal] = useState(false);
     const [showSampleModal, setShowSampleModal] = useState(false);
     const [showErdModal, setShowErdModal] = useState(false);
+    const [showDocsModal, setShowDocsModal] = useState(false);
     const [showToast, setShowToast] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
 
-    // Load existing data on mount
+    // Load existing data on mount or auto-load mock if empty
     useEffect(() => {
-        const existingResults = db.getAllStrategyRecommendations();
-        if (existingResults.length > 0) {
-            setResult(existingResults[0]);
-        }
+        const loadInitialData = async () => {
+            const existingResults = db.getAllStrategyRecommendations();
+            if (existingResults.length > 0) {
+                setResult(existingResults[0]);
+            } else {
+                try {
+                    const response = await fetch('/mock/strategy.json');
+                    const data = await response.json();
+
+                    const caseRecord = db.createCase('복구된 전략 추천', '자동 복구된 샘플 데이터입니다.', 'contract');
+                    const run = db.createAnalysisRun(caseRecord.case_id, 'STRATEGY', 'Sample Text');
+
+                    const resultData: StrategyRecommendation = {
+                        ...data,
+                        run_id: run.run_id,
+                    };
+
+                    db.saveStrategyRecommendation(resultData);
+                    db.completeAnalysisRun(run.run_id, true, 0);
+                    setResult(resultData);
+                } catch (e) {
+                    console.error("Failed to restore initial data", e);
+                }
+            }
+        };
+        loadInitialData();
     }, []);
 
     const handleSampleInput = () => {
@@ -196,6 +219,7 @@ ${selectedScenario?.next_actions.map((action, idx) => `  ${idx + 1}) ${action}`)
                             onViewDbTable={() => setShowDbModal(true)}
                             onViewSampleRecords={() => setShowSampleModal(true)}
                             onViewERD={() => setShowErdModal(true)}
+                            onViewDocs={() => setShowDocsModal(true)}
                         />
                     </div>
 
@@ -439,6 +463,12 @@ ${selectedScenario?.next_actions.map((action, idx) => `  ${idx + 1}) ${action}`)
             <ERDModal
                 isOpen={showErdModal}
                 onClose={() => setShowErdModal(false)}
+            />
+
+            <DocsModal
+                isOpen={showDocsModal}
+                onClose={() => setShowDocsModal(false)}
+                featureName="strategy"
             />
 
             {showToast && (

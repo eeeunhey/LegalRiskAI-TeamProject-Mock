@@ -149,6 +149,9 @@ export interface SchemaColumn {
     isForeignKey: boolean;
     references?: string;
     description: string;
+    pkReason?: string;
+    fkReason?: string;
+    dataStrategy?: string;
 }
 
 export interface TableSchema {

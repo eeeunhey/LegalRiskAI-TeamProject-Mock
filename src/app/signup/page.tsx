@@ -4,9 +4,12 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Scale, Mail, Lock, Eye, EyeOff, UserPlus, AlertCircle, User, CheckCircle } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function SignupPage() {
     const router = useRouter();
+    const { login } = useAuth();
+
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -40,7 +43,11 @@ export default function SignupPage() {
         }
 
         setLoading(true);
+        // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 800));
+
+        // Auto login as regular user after signup
+        login(email, 'user');
         router.push('/dashboard');
     };
 

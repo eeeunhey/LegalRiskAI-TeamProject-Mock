@@ -29,12 +29,34 @@ export default function EmotionPage() {
     const [showToast, setShowToast] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
 
-    // Load existing data on mount
+    // Load existing data on mount or auto-load mock if empty
     useEffect(() => {
-        const existingResults = db.getAllEmotionEscalations();
-        if (existingResults.length > 0) {
-            setResult(existingResults[0]);
-        }
+        const loadInitialData = async () => {
+            const existingResults = db.getAllEmotionEscalations();
+            if (existingResults.length > 0) {
+                setResult(existingResults[0]);
+            } else {
+                try {
+                    const response = await fetch('/mock/emotion.json');
+                    const data = await response.json();
+
+                    const caseRecord = db.createCase('복구된 감정 분석', '자동 복구된 샘플 데이터입니다.', 'consumer');
+                    const run = db.createAnalysisRun(caseRecord.case_id, 'EMOTION', 'Sample Text');
+
+                    const resultData: EmotionEscalation = {
+                        ...data,
+                        run_id: run.run_id,
+                    };
+
+                    db.saveEmotionEscalation(resultData);
+                    db.completeAnalysisRun(run.run_id, true, 0);
+                    setResult(resultData);
+                } catch (e) {
+                    console.error("Failed to restore initial data", e);
+                }
+            }
+        };
+        loadInitialData();
     }, []);
 
     // Words to highlight
@@ -317,7 +339,6 @@ export default function EmotionPage() {
                 isOpen={showDocsModal}
                 onClose={() => setShowDocsModal(false)}
                 featureName="emotion"
-                featureDescription="감정 격화 단계 분석 AI"
             />
 
             {showToast && (

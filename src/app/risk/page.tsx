@@ -28,12 +28,34 @@ export default function RiskPage() {
     const [showToast, setShowToast] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
 
-    // Load existing data on mount
+    // Load existing data on mount or auto-load mock if empty
     useEffect(() => {
-        const existingResults = db.getAllRiskPredictions();
-        if (existingResults.length > 0) {
-            setResult(existingResults[0]);
-        }
+        const loadInitialData = async () => {
+            const existingResults = db.getAllRiskPredictions();
+            if (existingResults.length > 0) {
+                setResult(existingResults[0]);
+            } else {
+                try {
+                    const response = await fetch('/mock/risk.json');
+                    const data = await response.json();
+
+                    const caseRecord = db.createCase('복구된 위험 분석', '자동 복구된 샘플 데이터입니다.', 'contract');
+                    const run = db.createAnalysisRun(caseRecord.case_id, 'RISK', 'Sample Text');
+
+                    const resultData: LegalRiskPrediction = {
+                        ...data,
+                        run_id: run.run_id,
+                    };
+
+                    db.saveRiskPrediction(resultData);
+                    db.completeAnalysisRun(run.run_id, true, 0);
+                    setResult(resultData);
+                } catch (e) {
+                    console.error("Failed to restore initial data", e);
+                }
+            }
+        };
+        loadInitialData();
     }, []);
 
     // Risk factor explanations
@@ -285,7 +307,6 @@ export default function RiskPage() {
                 isOpen={showDocsModal}
                 onClose={() => setShowDocsModal(false)}
                 featureName="risk"
-                featureDescription="법적 위험도 예측 AI"
             />
 
             {showToast && (
