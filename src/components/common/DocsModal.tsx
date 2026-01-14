@@ -42,6 +42,11 @@ interface RecommendedApi {
     pricing: string;
 }
 
+interface FeatureCategoryInfo {
+    definition: string; // 핵심 정의 (What & Why)
+    goal: string; // 구현 목표 (Goal)
+}
+
 interface FeatureDocData {
     title: string;
     subtitle: string;
@@ -56,6 +61,7 @@ interface FeatureDocData {
     wireframe: string;
     useCases: UseCase[];
     checklist: ChecklistItem[];
+    categories?: Record<string, FeatureCategoryInfo>; // 카테고리별 상세 정의
     testCases?: TestCase[]; // 테스트 케이스
     recommendedApis?: RecommendedApi[]; // 추천 실제 API
 }
@@ -94,21 +100,64 @@ export const featureDocumentation: Record<string, FeatureDocData> = {
             { actor: '관리자', action: 'DB 테이블 보기 클릭', expected: '저장된 분석 결과 테이블 확인' },
         ],
         checklist: [
-            { id: 'clf-1-1', title: '텍스트 입력 Textarea 렌더링', description: '사용자가 분쟁 내용을 입력할 수 있는 textarea 요소를 화면에 렌더링한다. 최소 높이 200px, placeholder 텍스트 포함.' },
-            { id: 'clf-1-2', title: '입력 글자수 실시간 카운트', description: 'textarea 하단에 현재 입력된 글자수를 실시간으로 표시한다. (예: "152자")' },
-            { id: 'clf-1-3', title: '최소 글자수 유효성 검사', description: '분석 실행 시 입력 텍스트가 30자 미만이면 Toast 경고를 표시하고 분석을 중단한다.' },
-            { id: 'clf-2-1', title: '샘플 텍스트 자동 입력 버튼', description: '"샘플 텍스트 입력" 버튼 클릭 시 미리 정의된 예시 분쟁 텍스트를 textarea에 자동 입력한다.' },
-            { id: 'clf-3-1', title: '분석 실행 버튼 UI', description: '"유형 분석 실행" 버튼을 그라데이션 스타일로 렌더링한다. 비활성화 상태 스타일 포함.' },
-            { id: 'clf-3-2', title: '분석 중 로딩 스피너 표시', description: '분석 실행 중 버튼 내부에 회전하는 로딩 스피너와 "분석 중..." 텍스트를 표시한다.' },
-            { id: 'clf-3-3', title: 'Mock API 호출 및 응답 파싱', description: '/mock/classify.json 파일을 fetch하여 분류 결과 데이터를 파싱한다.' },
-            { id: 'clf-4-1', title: '분류 결과 카드 렌더링', description: '분석 완료 후 상단에 최상위 분류 레이블(예: Consumer)을 강조 표시하는 결과 카드를 렌더링한다.' },
-            { id: 'clf-4-2', title: 'Bar Chart로 분류 점수 시각화', description: '각 분류 유형별 확률 점수를 수평 Bar Chart로 시각화한다. 가장 높은 점수 막대는 강조 색상.' },
-            { id: 'clf-4-3', title: '키워드 태그 그룹 렌더링', description: 'AI가 추출한 핵심 키워드를 Chip/Tag 형태로 나열한다. 클릭 가능한 스타일.' },
-            { id: 'clf-4-4', title: 'AI 판단 근거 설명 표시', description: '분류 결과에 대한 AI의 설명 텍스트를 박스 형태로 표시한다.' },
-            { id: 'clf-5-1', title: 'In-Memory DB에 분석 결과 저장', description: 'db.saveClassificationResult()를 호출하여 분류 결과를 메모리 DB에 저장한다.' },
-            { id: 'clf-5-2', title: 'Analysis Run 상태 업데이트', description: 'db.completeAnalysisRun()을 호출하여 분석 실행 상태를 success로 업데이트한다.' },
-            { id: 'clf-5-3', title: 'Audit Log 기록', description: 'db.logAction()을 호출하여 VIEW_RESULT 액션을 감사 로그에 기록한다.' },
+            // 입력 인터페이스
+            { category: '입력 인터페이스', id: 'clf-1-1', title: '텍스트 입력 Textarea 렌더링', description: '사용자가 분쟁 내용을 입력할 수 있는 textarea 요소를 화면에 렌더링한다. 최소 높이 200px, placeholder 텍스트 포함.' },
+            { category: '입력 인터페이스', id: 'clf-1-2', title: '입력 글자수 실시간 카운트', description: 'textarea 하단에 현재 입력된 글자수를 실시간으로 표시한다. (예: "152자")' },
+            { category: '입력 인터페이스', id: 'clf-1-3', title: '최소 글자수 유효성 검사', description: '분석 실행 시 입력 텍스트가 30자 미만이면 Toast 경고를 표시하고 분석을 중단한다.' },
+            { category: '입력 인터페이스', id: 'clf-2-1', title: '샘플 텍스트 자동 입력 버튼', description: '"샘플 텍스트 입력" 버튼 클릭 시 미리 정의된 예시 분쟁 텍스트를 textarea에 자동 입력한다.' },
+
+            // 분석 요청
+            { category: '분석 요청', id: 'clf-3-1', title: '분석 실행 버튼 UI', description: '"유형 분석 실행" 버튼을 그라데이션 스타일로 렌더링한다. 비활성화 상태 스타일 포함.' },
+            { category: '분석 요청', id: 'clf-3-2', title: '분석 중 로딩 스피너 표시', description: '분석 실행 중 버튼 내부에 회전하는 로딩 스피너와 "분석 중..." 텍스트를 표시한다.' },
+            { category: '분석 요청', id: 'clf-3-3', title: 'Mock API 호출 및 응답 파싱', description: '/mock/classify.json 파일을 fetch하여 분류 결과 데이터를 파싱한다.' },
+
+            // 결과 시각화
+            { category: '결과 시각화', id: 'clf-4-1', title: '분류 결과 카드 렌더링', description: '분석 완료 후 상단에 최상위 분류 레이블(예: Consumer)을 강조 표시하는 결과 카드를 렌더링한다.' },
+            { category: '결과 시각화', id: 'clf-4-2', title: 'Bar Chart로 분류 점수 시각화', description: '각 분류 유형별 확률 점수를 수평 Bar Chart로 시각화한다. 가장 높은 점수 막대는 강조 색상.' },
+            { category: '결과 시각화', id: 'clf-4-3', title: '키워드 태그 그룹 렌더링', description: 'AI가 추출한 핵심 키워드를 Chip/Tag 형태로 나열한다. 클릭 가능한 스타일.' },
+            { category: '결과 시각화', id: 'clf-4-4', title: 'AI 판단 근거 설명 표시', description: '분류 결과에 대한 AI의 설명 텍스트를 박스 형태로 표시한다.' },
+
+            // 데이터 처리
+            {
+                category: '데이터 처리',
+                id: 'clf-5-1',
+                title: 'In-Memory DB에 분석 결과 저장',
+                description: '분석된 분류 데이터를 "classification_results" 테이블에 저장합니다. 이 데이터는 사용자 대시보드에서 "분야별 상담 통계"를 집계하는 데 사용됩니다.',
+                dataDescription: 'Schema: { analysis_id: string, category: "Civil" | "Criminal", confidence: 0.95, keywords: ["contract", "breach"] }'
+            },
+            {
+                category: '데이터 처리',
+                id: 'clf-5-2',
+                title: 'Analysis Run 상태 업데이트',
+                description: '비동기 분석 작업의 Lifecycle 관리입니다. 분석이 완료되면 상태를 "completed"로 변경하여 UI상의 로딩 상태를 해제하고 결과 화면으로 전환하는 트리거 역할을 합니다.',
+                dataDescription: 'Target: analysis_runs 테이블, Field: status ("pending" -> "success"), completed_at (timestamp)'
+            },
+            {
+                category: '데이터 처리',
+                id: 'clf-5-3',
+                title: 'Audit Log 기록',
+                description: '사용자의 중요 활동(결과 조회)을 보안 감사 로그로 남깁니다. 추후 과금 근거 데이터나 시스템 오용 모니터링 자료로 활용됩니다.',
+                dataDescription: 'Audit Format: [TIMESTAMP] [USER_ID] ACTION:VIEW_RESULT TARGET:ANALYSIS_ID'
+            },
         ],
+        categories: {
+            '입력 인터페이스': {
+                definition: '사용자로부터 분석할 분쟁 데이터를 입력받고 기본적인 유효성을 검증하는 단계입니다.',
+                goal: '최소한의 입력 노력으로 분석에 필요한 양질의 텍스트 데이터를 확보하는 것'
+            },
+            '분석 요청': {
+                definition: '확보된 데이터를 AI 모델(Mock Server)로 전송하고 처리 상태를 관리하는 통신 모듈입니다.',
+                goal: '사용자에게 명확한 진행 상태 피드백을 제공하여 대기 경험 최적화'
+            },
+            '결과 시각화': {
+                definition: 'AI 모델의 확률적 분석 결과를 사용자가 이해하기 쉬운 차트와 텍스트로 변환하여 보여줍니다.',
+                goal: '단순한 텍스트 분류를 넘어, 왜 그렇게 분류되었는지에 대한 설명력(Explainability) 제공'
+            },
+            '데이터 처리': {
+                definition: '분석 세션의 결과 데이터를 정규화된 스키마로 변환하여 저장하고, 트랜잭션 상태를 관리하는 백엔드 로직입니다.',
+                goal: '후행 개발자가 데이터 파이프라인(집계, 과금, 감사)을 구축할 때 명확한 데이터 규격을 참고할 수 있도록 스키마와 저장 목적을 명시'
+            }
+        },
         testCases: [
             {
                 id: 'tc-clf-1',
@@ -218,17 +267,54 @@ export const featureDocumentation: Record<string, FeatureDocData> = {
             { actor: '사용자', action: '리스크 요인 항목 클릭', expected: '상세 설명 펼쳐짐' },
         ],
         checklist: [
-            { id: 'risk-1-1', title: '텍스트 입력 Textarea 렌더링', description: '경고 서신/통보문 내용을 입력받을 textarea 요소를 렌더링한다.' },
-            { id: 'risk-1-2', title: '입력 글자수 실시간 표시', description: '현재 입력된 글자수를 textarea 하단에 표시한다.' },
-            { id: 'risk-2-1', title: 'Gauge Chart 컴포넌트 렌더링', description: '리스크 점수(0-100)를 반원형 게이지 차트로 시각화한다. 색상은 점수에 따라 변경.' },
-            { id: 'risk-2-2', title: '리스크 레벨 배지 표시', description: 'HIGH/MEDIUM/LOW 레벨을 색상별 배지로 표시한다. (빨강/노랑/초록)' },
-            { id: 'risk-3-1', title: '승소 확률 Progress Bar 렌더링', description: '예상 승소 확률을 수평 Progress Bar로 시각화한다. 퍼센트 값 표시.' },
-            { id: 'risk-4-1', title: '리스크 요인 목록 렌더링', description: '분석된 리스크 요인들을 목록 형태로 표시한다. 각 항목에 아이콘 포함.' },
-            { id: 'risk-4-2', title: '리스크 요인 클릭 시 상세 설명 토글', description: '리스크 요인 항목 클릭 시 해당 항목의 상세 설명을 펼치거나 접는다.' },
-            { id: 'risk-5-1', title: 'Mock API 호출 (/mock/risk.json)', description: 'fetch를 사용하여 위험도 분석 Mock 데이터를 불러온다.' },
-            { id: 'risk-5-2', title: '분석 결과 DB 저장', description: 'db.saveRiskPrediction()으로 예측 결과를 저장한다.' },
-            { id: 'risk-6-1', title: '참고 안내 메시지 표시', description: '분석 결과 하단에 "본 점수는 참고 지표입니다" 형태의 안내 메시지를 표시한다.' },
+            // 입력 인터페이스
+            { category: '입력 인터페이스', id: 'risk-1-1', title: '텍스트 입력 Textarea 렌더링', description: '경고 서신/통보문 내용을 입력받을 textarea 요소를 렌더링한다.' },
+            { category: '입력 인터페이스', id: 'risk-1-2', title: '입력 글자수 실시간 표시', description: '현재 입력된 글자수를 textarea 하단에 표시한다.' },
+
+            // 시각화 및 결과
+            { category: '시각화 및 결과', id: 'risk-2-1', title: 'Gauge Chart 컴포넌트 렌더링', description: '리스크 점수(0-100)를 반원형 게이지 차트로 시각화한다. 색상은 점수에 따라 변경.' },
+            { category: '시각화 및 결과', id: 'risk-2-2', title: '리스크 레벨 배지 표시', description: 'HIGH/MEDIUM/LOW 레벨을 색상별 배지로 표시한다. (빨강/노랑/초록)' },
+            { category: '시각화 및 결과', id: 'risk-3-1', title: '승소 확률 Progress Bar 렌더링', description: '예상 승소 확률을 수평 Progress Bar로 시각화한다. 퍼센트 값 표시.' },
+            { category: '시각화 및 결과', id: 'risk-4-1', title: '리스크 요인 목록 렌더링', description: '분석된 리스크 요인들을 목록 형태로 표시한다. 각 항목에 아이콘 포함.' },
+            { category: '시각화 및 결과', id: 'risk-4-2', title: '리스크 요인 클릭 시 상세 설명 토글', description: '리스크 요인 항목 클릭 시 해당 항목의 상세 설명을 펼치거나 접는다.' },
+
+            // 데이터 처리
+            {
+                category: '데이터 처리',
+                id: 'risk-5-1',
+                title: 'Mock API 호출 (/mock/risk.json)',
+                description: 'REST API를 통해 리스크 분석 모델 서버에 텍스트를 전송하고 결과를 수신합니다. 응답 시간 최적화를 위해 비동기 처리하며, 타임아웃 예외 처리가 필수적입니다.',
+                dataDescription: 'Request: { text: string } -> Response: { riskScore: number, riskFactors: [{factor: string, description: string}] }'
+            },
+            {
+                category: '데이터 처리',
+                id: 'risk-5-2',
+                title: '분석 결과 DB 저장',
+                description: '산출된 리스크 점수와 상세 요인을 "legal_risk_predictions" 테이블에 저장합니다. 이 데이터는 추후 사용자의 리스크 변화 추이 그래프를 그리는 데 활용됩니다.',
+                dataDescription: 'Schema: { analysis_id: string, risk_score: 85, risk_level: "HIGH", factors_json: "[...]" }'
+            },
+            {
+                category: '데이터 처리',
+                id: 'risk-6-1',
+                title: '참고 안내 메시지 표시',
+                description: '법적 효력에 대한 오인을 방지하기 위해 면책 조항(Disclaimer) 데이터를 UI 하단에 동적으로 로드하여 표시합니다.',
+                dataDescription: 'Static Data or Config: { disclamier_text_kr: "본 결과는..." }'
+            },
         ],
+        categories: {
+            '입력 인터페이스': {
+                definition: '법적 위험도를 측정할 대상 텍스트(계약서, 내용증명 등)를 수집하는 단계입니다.',
+                goal: '법률 문서의 특수성을 고려한 안정적인 텍스트 입력 환경 제공'
+            },
+            '시각화 및 결과': {
+                definition: '추상적인 "위험"의 개념을 게이지, 레벨, 확률 등 구체적인 수치와 시각적 지표로 변환합니다.',
+                goal: '사용자가 직관적으로 사안의 심각성을 인지하고 신속하게 대응 수위를 결정하도록 지원'
+            },
+            '데이터 처리': {
+                definition: '분석된 리스크 정량 지표와 진단 근거를 데이터베이스에 구조화하여 저장하고, 법적 고지사항을 관리합니다.',
+                goal: '단순 결과 저장을 넘어, 리스크 변화 이력 추적(History Tracking) 기능 구현을 위한 시계열 데이터 기반 마련'
+            }
+        },
         testCases: [
             {
                 id: 'tc-risk-1',
@@ -326,16 +412,53 @@ export const featureDocumentation: Record<string, FeatureDocData> = {
             { actor: '사용자', action: '텍스트 내 키워드 확인', expected: '감정 키워드가 하이라이트됨' },
         ],
         checklist: [
-            { id: 'emo-1-1', title: '텍스트 입력 Textarea 렌더링', description: '대화 내용을 입력받는 textarea를 렌더링한다.' },
-            { id: 'emo-1-2', title: '감정 키워드 하이라이트 표시', description: '입력된 텍스트 중 감정 키워드를 색상으로 강조 표시한다.' },
-            { id: 'emo-2-1', title: '현재 감정 단계 배지 렌더링', description: '"위협 및 압박", "갈등 고조" 등 현재 단계를 배지 형태로 표시한다.' },
-            { id: 'emo-2-2', title: '공격성 지수 수치 표시', description: '공격성 지수(0-100)를 큰 숫자로 표시하고 색상별로 구분한다.' },
-            { id: 'emo-3-1', title: 'Line Chart로 감정 추이 시각화', description: 'T-3 → T-2 → T-1 → T0 시점별 감정 지수 변화를 꺾은선 그래프로 표시한다.' },
-            { id: 'emo-3-2', title: '격화 속도 표시', description: '"fast", "moderate", "slow" 중 하나를 텍스트와 아이콘으로 표시한다.' },
-            { id: 'emo-4-1', title: '감정 키워드 태그 렌더링', description: '분석된 감정 키워드들을 Chip 형태로 나열한다.' },
-            { id: 'emo-5-1', title: 'Mock API 호출 (/mock/emotion.json)', description: 'fetch로 감정 분석 Mock 데이터를 불러온다.' },
-            { id: 'emo-5-2', title: '분석 결과 DB 저장', description: 'db.saveEmotionEscalation()으로 결과를 저장한다.' },
+            // 감정 데이터 입력
+            { category: '감정 데이터 입력', id: 'emo-1-1', title: '텍스트 입력 Textarea 렌더링', description: '메시지/이메일 내용을 입력받을 textarea를 렌더링한다.' },
+            { category: '감정 데이터 입력', id: 'emo-1-2', title: '입력 글자수 실시간 표시', description: '현재 입력된 글자수를 textarea 하단에 표시한다.' },
+
+            // 감정 추이 시각화
+            { category: '감정 추이 시각화', id: 'emo-2-1', title: 'Line Chart 컴포넌트 렌더링', description: '시간 흐름에 따른 감정 격화 추이를 Line Chart로 시각화한다. X축: 시간(T-3~T0), Y축: 격화 지수.' },
+            { category: '감정 추이 시각화', id: 'emo-2-2', title: '상승/하락 추세 아이콘 표시', description: '전 단계 대비 감정 격화 속도가 상승했는지 하락했는지 화살표 아이콘으로 표시.' },
+
+            // 지표 심층 분석
+            { category: '지표 심층 분석', id: 'emo-3-1', title: 'Radar Chart 컴포넌트 렌더링', description: '공격성, 불안, 방어성 등 세부 감정 지표를 Radar Chart로 시각화한다.' },
+            { category: '지표 심층 분석', id: 'emo-3-2', title: '현재 갈등 단계 배지 표시', description: '현재 분석된 갈등 심각도 단계를 시각적 배지로 표시한다.' },
+            { category: '지표 심층 분석', id: 'emo-4-1', title: '감정 키워드 목록 렌더링', description: '텍스트에서 감지된 주요 감정 키워들를 추출하여 나열한다.' },
+
+            // 데이터 처리
+            {
+                category: '데이터 처리',
+                id: 'emo-5-1',
+                title: 'Mock API 호출 (/mock/emotion.json)',
+                description: '시간 역순으로 정렬된 감정 추이 데이터를 요청하여 가져옵니다. 각 시점 데이터는 텍스트 입력의 변화에 따른 감정 격화 과정을 추적하는 데 필수적입니다.',
+                dataDescription: 'Response: { timeline: [{t: -3, score: 30}, {t: 0, score: 88, state: "Threat"}], radarData: {aggression: 90, anxiety: 40} }'
+            },
+            {
+                category: '데이터 처리',
+                id: 'emo-5-2',
+                title: '분석 결과 DB 저장',
+                description: '감정 상태 스냅샷과 시계열 변화 데이터를 "emotion_escalations" 테이블에 JSONB 컬럼으로 저장합니다. 복잡한 지표 데이터를 유연하게 저장하기 위해 NoSQL 형태의 저장 방식을 채택합니다.',
+                dataDescription: 'Schema: { analysis_id: string, current_stage: "Explosion", timeline_json: "[...]", radar_metrics_json: "{...}" }'
+            },
         ],
+        categories: {
+            '감정 데이터 입력': {
+                definition: '상대방과의 대화, 이메일, 문자 메시지 등 감정 상태가 반영된 텍스트 데이터를 입력받는 단계입니다.',
+                goal: '객관적인 감정 분석을 위한 원문 데이터를 충실히 확보'
+            },
+            '감정 추이 시각화': {
+                definition: '단발적인 감정이 아닌, 시간의 흐름에 따라 변화하는 감정의 기류를 시계열 그래프로 보여줍니다.',
+                goal: '갈등이 진정 국면인지 악화 일로인지 흐름을 파악하여 적절한 개입(Intervention) 타이밍 포착'
+            },
+            '지표 심층 분석': {
+                definition: '분노, 불안, 혐오 등 복합적인 감정의 스펙트럼을 세부적으로 분해하여 다각도로 진단합니다.',
+                goal: '단순히 "화났다"를 넘어 구체적으로 어떤 감정이 지배적인지 파악하여 맞춤형 대응 전략 수립'
+            },
+            '데이터 처리': {
+                definition: '다차원적인 감정 분석 결과(시계열, 레이더 차트)를 효율적으로 저장하고 이력을 관리하는 데이터 파이프라인입니다.',
+                goal: '정형화하기 어려운 감정 데이터의 특성을 고려하여, 추후 심층 분석이 가능하도록 원본 데이터(Raw Data)와 분석 지표를 모두 보존'
+            }
+        },
         testCases: [
             {
                 id: 'tc-emo-1',
@@ -431,17 +554,53 @@ export const featureDocumentation: Record<string, FeatureDocData> = {
             { actor: '사용자', action: '판례 카드 클릭', expected: '상세 정보 모달 표시' },
         ],
         checklist: [
-            { id: 'sim-1-1', title: '텍스트 입력 Textarea 렌더링', description: '사건 상황을 입력받는 textarea를 렌더링한다.' },
-            { id: 'sim-2-1', title: '쟁점 비교 테이블 렌더링', description: '입력 쟁점과 매칭된 쟁점을 2열 테이블로 비교 표시한다.' },
-            { id: 'sim-2-2', title: '쟁점별 연결선 또는 하이라이트', description: '입력 쟁점과 매칭 쟁점 간 연결 관계를 시각적으로 표시한다.' },
-            { id: 'sim-3-1', title: '유사 판례 카드 3개 렌더링', description: 'Top 3 유사 판례를 카드 형태로 렌더링한다. 각 카드에 제목, 유사도, 요약 포함.' },
-            { id: 'sim-3-2', title: '유사도 퍼센트 배지 표시', description: '각 판례의 유사도를 %로 표시하고 색상으로 구분한다.' },
-            { id: 'sim-3-3', title: '승소자 표시 (임차인/임대인)', description: '판례의 승소 당사자를 배지 형태로 표시한다.' },
-            { id: 'sim-4-1', title: '판례 상세 모달 트리거', description: '판례 카드 클릭 시 상세 정보를 모달로 표시한다.' },
-            { id: 'sim-4-2', title: '판결문 전체 보기 버튼', description: '모달 내 "판결문 보기" 버튼을 배치한다.' },
-            { id: 'sim-5-1', title: 'Mock API 호출 (/mock/similar.json)', description: 'fetch로 유사 판례 Mock 데이터를 불러온다.' },
-            { id: 'sim-5-2', title: '분석 결과 DB 저장', description: 'db.saveSimilarCaseMatch()로 결과를 저장한다.' },
+            // 사건 검색
+            { category: '사건 검색', id: 'sim-1-1', title: '검색어 입력 Search Bar 렌더링', description: '돋보기 아이콘이 포함된 대형 검색바를 중앙에 배치한다.' },
+            { category: '사건 검색', id: 'sim-1-2', title: '최근 검색어/인기 키워드 표시', description: '검색바 하단에 사용자의 최근 검색어와 시스템 인기 급상승 키워드를 렌더링한다.' },
+
+            // 매칭 결과
+            { category: '매칭 결과', id: 'sim-2-1', title: '매칭된 판례 목록 카드 리스트', description: '검색 결과로 매칭된 판례들을 카드 리스트 형태로 나열한다. 정확도 순 정렬.' },
+            { category: '매칭 결과', id: 'sim-2-2', title: '유사도 퍼센트 배지 표시', description: '각 판례 카드에 AI가 분석한 유사도(예: 88%)를 배지로 표시한다.' },
+            { category: '매칭 결과', id: 'sim-3-1', title: '사건번호 및 판례 요약 표시', description: '판례의 사건번호와 핵심 요약 텍스트(3줄 제한)를 카드 내부에 표시한다.' },
+
+            // 상세 비교
+            { category: '상세 비교', id: 'sim-3-2', title: '판례 상세 모달/페이지 이동', description: '판례 카드 클릭 시 상세 정보를 볼 수 있는 모달을 띄우거나 페이지로 이동한다.' },
+            { category: '상세 비교', id: 'sim-4-1', title: '내 사건 vs 판례 비교 차트', description: '내 사건과 선택된 판례의 주요 속성을 방사형 차트 등으로 비교 시각화한다.' },
+
+            // 데이터 처리
+            {
+                category: '데이터 처리',
+                id: 'sim-5-1',
+                title: 'Mock API 호출 (/mock/similar.json)',
+                description: '사용자의 자연어 쿼리를 임베딩 벡터로 변환하여 벡터 DB(Mock)에서 유사도가 높은 상위 N개의 판례를 검색합니다.',
+                dataDescription: 'Request: { query: string, topK: 3 } -> Response: { cases: [{ id: "2023da1234", title: "...", similarity: 0.88, summary: "..." }] }'
+            },
+            {
+                category: '데이터 처리',
+                id: 'sim-5-2',
+                title: '검색 이력 DB 저장',
+                description: '사용자의 검색 쿼리와 선택한 판례 ID를 "search_histories" 테이블에 기록합니다. 이는 개인화 추천 모델의 학습 데이터(Training Data)로 활용됩니다.',
+                dataDescription: 'Schema: { user_id: string, query_text: string, selected_case_id: string, search_timestamp: timestamp }'
+            },
         ],
+        categories: {
+            '사건 검색': {
+                definition: '사용자의 구체적인 상황을 가장 잘 설명하는 자연어 쿼리를 통해 방대한 판례 데이터베이스를 탐색합니다.',
+                goal: '법률 전문 용어를 모르더라도 일상 언어로 정확하고 신속하게 관련 판례 발견'
+            },
+            '매칭 결과': {
+                definition: '수만 건의 판례 중 AI가 분석한 유사도(Similarity Score)를 기준으로 가장 연관성 높은 사례를 선별하여 제시합니다.',
+                goal: '검색 결과의 홍수 속에서 사용자에게 실질적으로 도움이 되는 "진짜 유사 판례" 우선 노출'
+            },
+            '상세 비교': {
+                definition: '나의 사건과 판례 사이의 공통점과 차이점을 구조적으로 대조하여 보여줍니다.',
+                goal: '단순 정보 열람을 넘어, 해당 판례가 내 사건에 유리한지 불리한지 판단할 수 있는 근거 제공'
+            },
+            '데이터 처리': {
+                definition: '검색 질의어와 사용자 피드백(클릭 데이터)을 수집하여 검색 품질을 개선하고 추천 알고리즘을 고도화합니다.',
+                goal: '단순 로그 저장이 아닌, User interaction 데이터를 통한 검색 엔진의 지속적인 성능 향상(Reinforcement Learning from Human Feedback)'
+            }
+        },
         testCases: [
             {
                 id: 'tc-similar-1',
@@ -539,19 +698,53 @@ export const featureDocumentation: Record<string, FeatureDocData> = {
             { actor: '사용자', action: '시나리오 카드 선택', expected: '상세 액션 아이템 표시' },
         ],
         checklist: [
-            { id: 'str-1-1', title: '텍스트 입력 Textarea 렌더링', description: '분쟁 상황을 입력받는 textarea를 렌더링한다.' },
-            { id: 'str-2-1', title: '예상 승소율 큰 숫자 표시', description: '예상 승소 확률을 크고 강조된 숫자로 표시한다.' },
-            { id: 'str-3-1', title: '전략 요약 카드 렌더링', description: 'Key Takeaway와 Focus Points를 포함한 요약 카드를 렌더링한다.' },
-            { id: 'str-3-2', title: 'Focus Points 목록 표시', description: '핵심 집중 포인트를 불릿 리스트로 표시한다.' },
-            { id: 'str-4-1', title: '추천 시나리오 카드 3개 렌더링', description: '3가지 추천 전략 시나리오를 카드 형태로 렌더링한다.' },
-            { id: 'str-4-2', title: '난이도 배지 표시 (easy/medium/hard)', description: '각 시나리오의 실행 난이도를 색상별 배지로 표시한다.' },
-            { id: 'str-4-3', title: '효과 배지 표시 (low/medium/high)', description: '각 시나리오의 예상 효과를 배지로 표시한다.' },
-            { id: 'str-4-4', title: '시나리오 설명 텍스트 표시', description: '각 시나리오에 대한 상세 설명을 표시한다.' },
-            { id: 'str-4-5', title: 'Next Actions 아코디언 토글', description: '시나리오 선택 시 구체적인 다음 행동 목록을 펼쳐서 표시한다.' },
-            { id: 'str-5-1', title: 'Mock API 호출 (/mock/strategy.json)', description: 'fetch로 전략 추천 Mock 데이터를 불러온다.' },
-            { id: 'str-5-2', title: '분석 결과 DB 저장', description: 'db.saveStrategyRecommendation()으로 결과를 저장한다.' },
-            { id: 'str-6-1', title: '면책 조항 안내 메시지 표시', description: '"본 전략 추천은 AI 분석 결과로, 참고 목적으로만 활용해 주세요." 메시지를 표시한다.' },
+            // 사건 정보 수집
+            { category: '사건 정보 수집', id: 'strat-1-1', title: '분쟁 정보 입력 Form 렌더링', description: '상대방과의 관계(가족/직장 등), 분쟁 유형, 원하는 해결 방향을 입력받는 폼을 제공한다.' },
+            { category: '사건 정보 수집', id: 'strat-1-2', title: '해결 방향 선택 라디오 버튼', description: '원만 해결/강경 대응/법적 조치 중 선호하는 전략 방향을 선택하게 한다.' },
+
+            // AI 전략 수립
+            { category: 'AI 전략 수립', id: 'strat-2-1', title: '전략 요약 카드 렌더링', description: 'AI가 제안하는 핵심 전략을 3줄 요약하여 카드 형태로 표시한다.' },
+            { category: 'AI 전략 수립', id: 'strat-2-2', title: '예상 승소 확률 차트 표시', description: '현재 상황에서의 예상 승소 확률을 도넛 차트나 게이지로 시각화한다.' },
+            { category: 'AI 전략 수립', id: 'strat-3-1', title: '추천 시나리오 타임라인 렌더링', description: '단계별 대응 시나리오(내용증명 발송 -> 협상 -> 소송 등)를 타임라인 형태로 시각화한다.' },
+
+            // 실행 리포트
+            { category: '실행 리포트', id: 'strat-4-1', title: '액션 플랜 체크리스트 생성', description: '사용자가 당장 실행해야 할 구체적인 행동 지침을 체크리스트로 제공한다.' },
+            { category: '실행 리포트', id: 'strat-4-2', title: '필요 서류 목록 표시', description: '해당 전략 실행에 필요한 증빙 서류 목록을 안내한다.' },
+
+            // 데이터 처리
+            {
+                category: '데이터 처리',
+                id: 'strat-5-1',
+                title: 'Mock API 호출 (/mock/strategy.json)',
+                description: '사용자의 입력 상황(Context)과 목표(Goal)를 분석하여 최적의 전략 로드맵을 수신합니다. 결정 트리(Decision Tree) 기반의 로직이 백엔드에서 수행됩니다.',
+                dataDescription: 'Request: { context: string, goal: "settlement" } -> Response: { strategies: [{ name: "Negotiation", probability: 0.7, steps: ["..."] }] }'
+            },
+            {
+                category: '데이터 처리',
+                id: 'strat-5-2',
+                title: '전략 리포트 저장',
+                description: '생성된 맞춤형 전략 리포트를 "strategy_recommendations" 테이블에 저장합니다. 사용자가 언제든 다시 열어보고 진행 상황을 체크(Checklist Update)할 수 있도록 상태 정보를 포함합니다.',
+                dataDescription: 'Schema: { analysis_id: string, recommendation_json: "{...}", action_items_status: { "item_1": "done", "item_2": "pending" } }'
+            },
         ],
+        categories: {
+            '사건 정보 수집': {
+                definition: '단순한 사실 관계를 넘어, 당사자 간의 특수 관계(가족, 고용 등)와 사용자의 내면적 욕구(원만 해결 vs 강경 대응)를 파악합니다.',
+                goal: '법적 유불리뿐만 아니라 정서적, 상황적 맥락까지 고려한 전방위적 데이터 확보'
+            },
+            'AI 전략 수립': {
+                definition: '확보된 데이터를 종합하여 승소 확률을 극대화하면서도 사용자의 성향에 맞는 최적의 로드맵을 설계합니다.',
+                goal: '단 하나의 정답이 아닌, 상황에 따라 선택 가능한 복수의 시나리오 제안으로 사용자의 선택권 보장'
+            },
+            '실행 리포트': {
+                definition: '추상적인 전략을 사용자가 당장 수행할 수 있는 구체적인 행동 단위(Action Item)로 번역하여 제공합니다.',
+                goal: '법률 전문가의 조력 없이도 초기 대응이 가능하도록 실행 장벽 최소화'
+            },
+            '데이터 처리': {
+                definition: '전략의 실행 현황(Action Item 완료 여부)을 지속적으로 동기화하고, 상황 변화에 따른 전략 수정(Re-planning)을 지원합니다.',
+                goal: '일회성 조언이 아닌, 분쟁 해결의 전 과정을 관리하는 "살아있는 문서"로서 데이터 가치 창출'
+            }
+        },
         testCases: [
             {
                 id: 'tc-str-1',
@@ -860,9 +1053,59 @@ export const featureDocumentation: Record<string, FeatureDocData> = {
 
             // 데이터 저장
             { category: '데이터 저장', id: 'sim-9-1', title: 'Mock API 호출', description: '/mock/simulation.json 파일을 fetch하여 시뮬레이션 결과 데이터를 파싱한다.', dataDescription: 'API Response: SimulationResult 객체' },
-            { category: '데이터 저장', id: 'sim-9-2', title: '시뮬레이션 결과 DB 저장', description: 'db.saveSimulationResult()로 분석 결과를 메모리 DB에 저장한다.', dataDescription: 'simulation_results 테이블 INSERT' },
-            { category: '데이터 저장', id: 'sim-9-3', title: 'Analysis Run 생성 및 연결', description: 'db.createAnalysisRun()으로 분석 실행 기록을 생성하고 결과와 연결한다.', dataDescription: 'analysis_runs 테이블 INSERT' },
+            {
+                category: '데이터 저장',
+                id: 'sim-9-2',
+                title: '시뮬레이션 결과 DB 저장',
+                description: '사용자가 시뮬레이션한 파라미터(전략, 가중치 등)와 그에 따른 예측 결과(승소율, 보상금 등)를 "simulation_results" 테이블에 저장합니다. 이는 사용자가 다양한 시나리오를 비교 분석(A/B Test)할 수 있게 합니다.',
+                dataDescription: 'Schema: { simulation_id: string, parameters_json: "{strategy:..., weight:...}", outcome_json: "{win_prob: 0.82, compensation: 5000000}" }'
+            },
+            {
+                category: '데이터 저장',
+                id: 'sim-9-3',
+                title: 'Analysis Run 생성 및 연결',
+                description: '개별 시뮬레이션 실행을 전체 분석 세션과 연결합니다. 하나의 사건 분석(Analysis Run) 내에서 여러 번의 시뮬레이션이 수행될 수 있으므로, 1:N 관계를 형성합니다.',
+                dataDescription: 'Relation: analysis_runs(1) --< simulation_results(N)'
+            },
         ],
+        categories: {
+            '사건 정보 입력': {
+                definition: '사용자의 비정형 분쟁 상황을 AI가 이해할 수 있는 정형화된 데이터 컨텍스트로 변환하는 진입점입니다.',
+                goal: '법률적 배경 지식이 없는 사용자도 자신의 상황을 명확하게 전달할 수 있는 직관적인 인터페이스 제공'
+            },
+            '가중치 설정': {
+                definition: '사용자마다 다른 "승소", "피해 보상", "빠른 해결" 등의 목표 우선순위를 분석 엔진에 반영하는 제어 모듈입니다.',
+                goal: '천편일률적인 분석이 아닌, 사용자의 니즈가 반영된 개인화된 맞춤형 분석 결과 도출'
+            },
+            '분석 실행': {
+                definition: '설정된 데이터와 가중치를 기반으로 멀티 모델(Risk, Similar, Strategy)을 병렬로 가동하는 트리거입니다.',
+                goal: '복잡한 법률 분석 과정을 원클릭으로 단순화하고, 실시간 피드백을 통해 대기 시간의 지루함 해소'
+            },
+            '종합 리스크 분석': {
+                definition: '승소 확률, 예상 보상, 리스크 요인을 종합하여 하나의 직관적인 지표(Score/Probability)로 시각화하는 대시보드입니다.',
+                goal: '복잡한 법률 리스크를 숫자로 정량화하여 의사결정의 객관적인 기준점 제시'
+            },
+            '유사 판례 리포트': {
+                definition: '과거 데이터(판례) 중 내 사건과 가장 유사한 사례를 찾아 "미래의 내 결과"를 예측해볼 수 있는 비교 분석 도구입니다.',
+                goal: '단순 검색이 아닌, 내 사건과의 유사도 점수와 구체적인 공통점/차이점을 명시하여 설득력 강화'
+            },
+            '변호사 전략 리포트': {
+                definition: '분석된 데이터를 바탕으로 실제 변호사가 조언해주듯 구체적인 행동 지침(Action Plan)을 생성하는 심화 컨설팅입니다.',
+                goal: '단순한 현황 분석을 넘어 "그래서 이제 무엇을 해야 하는가?"에 대한 실질적인 솔루션 제공'
+            },
+            '쟁점별 상세 매칭': {
+                definition: '사건을 구성하는 세부 법리적 쟁점(Issue) 단위로 쪼개어 미시적인 분석 결과를 제공하는 정밀 진단 기능입니다.',
+                goal: '전체적인 승률뿐만 아니라, 특정 쟁점에서의 유불리를 파악하여 약점을 보완할 수 있는 기회 제공'
+            },
+            '반대 결과 주의': {
+                definition: '나에게 유리한 판례뿐만 아니라, 불리하게 작용할 수 있는 예외적인 판례를 미리 식별하는 방어 기제입니다.',
+                goal: '확증 편향을 방지하고 예상치 못한 반격이나 패소 가능성에 대비하여 분석의 신뢰도 확보'
+            },
+            '데이터 저장': {
+                definition: '사용자의 설정 값(Input)과 시뮬레이션 결과 값(Output)을 쌍으로 저장하여 비교 분석을 지원하는 데이터 아카이빙입니다.',
+                goal: '단순 결과 기록을 넘어선 "시나리오 실험실" 기능 제공 (예: "만약 합의를 우선시했다면 결과가 어떻게 달랐을까?")'
+            }
+        },
         recommendedApis: [
             {
                 name: '대법원 판례검색 Open API',
@@ -1658,14 +1901,32 @@ export default function DocsModal({ isOpen, onClose, featureName }: DocsModalPro
                                             return acc;
                                         }, {} as Record<string, ChecklistItem[]>)
                                     ).map(([category, items]) => (
-                                        <div key={category} className="bg-gray-50/50 rounded-xl p-4 border border-gray-100">
-                                            <h4 className="text-md font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                                <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
-                                                {category}
-                                                <span className="text-xs font-normal text-gray-500 ml-2 bg-white px-2 py-0.5 rounded-full border border-gray-200">
-                                                    {items.filter(i => checkedItems[i.id]).length} / {items.length} 완료
-                                                </span>
-                                            </h4>
+                                        <div key={category} className="bg-gray-50/50 rounded-xl p-6 border border-gray-100">
+                                            <div className="mb-6">
+                                                <h4 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
+                                                    <div className="w-1.5 h-6 bg-indigo-600 rounded-full"></div>
+                                                    {category}
+                                                    <span className={`text-xs ml-2 px-2.5 py-1 rounded-full border ${items.every(i => checkedItems[i.id])
+                                                        ? 'bg-green-100 text-green-700 border-green-200 font-medium'
+                                                        : 'bg-white text-gray-500 border-gray-200'
+                                                        }`}>
+                                                        {items.filter(i => checkedItems[i.id]).length} / {items.length} 완료
+                                                    </span>
+                                                </h4>
+                                                {docs.categories?.[category] && (
+                                                    <div className="ml-3.5 pl-4 border-l-2 border-gray-200 space-y-2">
+                                                        <p className="text-gray-700 font-medium leading-relaxed">
+                                                            <span className="text-indigo-600 mr-2">💡 정의:</span>
+                                                            {docs.categories[category].definition}
+                                                        </p>
+                                                        <p className="text-gray-600 text-sm">
+                                                            <span className="text-emerald-600 mr-2">🎯 목표:</span>
+                                                            {docs.categories[category].goal}
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
+
                                             <div className="space-y-3 pl-2">
                                                 {items.map((item) => (
                                                     <div
