@@ -1123,6 +1123,360 @@ export const featureDocumentation: Record<string, FeatureDocData> = {
             }
         ],
     },
+    chatbot: {
+        title: '법률 상담 AI 챗봇',
+        subtitle: 'Legal Consultation AI Chatbot',
+        overview: '사용자가 자연어로 법률 관련 질문을 하면 AI가 맥락을 이해하고 관련 법률 정보, 유사 사례, 조언을 대화형으로 제공합니다.',
+        inputDescription: '자연어 질문 (예: "임대차 계약 위반 시 손해배상 청구 가능한가요?")',
+        outputDescription: 'AI 응답 (법률 정보, 관련 조문, 유사 판례 링크, 추천 행동)',
+        aiModel: 'LegalRisk-CHATBOT-v1.0 (GPT-4 + RAG Pipeline)',
+        implementationSteps: ['질문 입력', '의도 분석', '컨텍스트 검색', 'LLM 응답 생성', '대화 저장'],
+        dbTables: [
+            { name: 'chat_sessions', purpose: '대화 세션 관리' },
+            { name: 'chat_messages', purpose: '개별 메시지 저장' },
+            { name: 'chat_contexts', purpose: '대화 컨텍스트 벡터 저장' }
+        ],
+        dataFlow: ['사용자 질문', '의도 분류(NLU)', 'RAG 검색', 'LLM 응답', 'UI 표시'],
+        erdDescription: 'users(1) → chat_sessions(N) → chat_messages(N)',
+        wireframe: `
+┌─────────────────────────────────────────────────────┐
+│  법률 상담 AI 챗봇                                    │
+├─────────────────────────────────────────────────────┤
+│  ┌───────────────────────────────────────────────┐  │
+│  │ [AI 아이콘] 안녕하세요! 법률 상담 AI입니다.     │  │
+│  │            무엇을 도와드릴까요?                 │  │
+│  ├───────────────────────────────────────────────┤  │
+│  │                    [사용자 메시지]             │  │
+│  │         임대차 계약 위반 손해배상 가능한가요?   │  │
+│  ├───────────────────────────────────────────────┤  │
+│  │ [AI 아이콘] 네, 민법 제390조에 따라 가능합니다. │  │
+│  │            [관련 조문 보기] [유사 판례 보기]    │  │
+│  └───────────────────────────────────────────────┘  │
+│  ┌───────────────────────────────────────────────┐  │
+│  │ [메시지 입력]                    [전송 버튼]   │  │
+│  └───────────────────────────────────────────────┘  │
+│  [📎 파일첨부] [🎤 음성입력] [📋 대화내역 저장]       │
+└─────────────────────────────────────────────────────┘`,
+        useCases: [
+            { actor: '일반 사용자', action: '법률 질문 입력', expected: 'AI가 관련 법률 정보와 조언 제공' },
+            { actor: '사용자', action: '후속 질문 입력', expected: '이전 대화 맥락을 유지한 응답' },
+            { actor: '사용자', action: '대화 내역 저장 클릭', expected: '대화가 PDF 또는 텍스트로 저장됨' },
+        ],
+        checklist: [
+            // 채팅 UI 구성
+            { category: '채팅 UI 구성', id: 'chat-1-1', title: '채팅 컨테이너 렌더링', description: '스크롤 가능한 메시지 목록 영역과 고정된 입력 영역으로 구성된 채팅 레이아웃을 구현한다.', dataDescription: 'CSS: height: calc(100vh - 200px), overflow-y: auto' },
+            { category: '채팅 UI 구성', id: 'chat-1-2', title: '메시지 버블 컴포넌트', description: '사용자/AI 메시지를 구분하는 말풍선 UI를 구현한다. AI는 왼쪽 정렬 + 아이콘, 사용자는 오른쪽 정렬.', dataDescription: 'Props: { role: "user" | "assistant", content: string, timestamp: Date }' },
+            { category: '채팅 UI 구성', id: 'chat-1-3', title: '타이핑 인디케이터', description: 'AI가 응답을 생성 중일 때 "..." 애니메이션 또는 타이핑 효과를 표시한다.', dataDescription: 'State: isTyping: boolean' },
+            { category: '채팅 UI 구성', id: 'chat-1-4', title: '메시지 입력창 및 전송 버튼', description: 'Enter 키 또는 버튼 클릭으로 메시지를 전송하는 입력 폼을 구현한다. Shift+Enter는 줄바꿈.', dataDescription: 'Event: onKeyDown, condition: e.key === "Enter" && !e.shiftKey' },
+
+            // 대화 처리 로직
+            { category: '대화 처리 로직', id: 'chat-2-1', title: '세션 ID 생성 및 관리', description: '새 대화 시작 시 UUID를 생성하여 세션을 식별한다. 세션별로 대화 이력을 그룹화.', dataDescription: 'Schema: { session_id: uuid, user_id: string, created_at: timestamp, title: string }' },
+            { category: '대화 처리 로직', id: 'chat-2-2', title: '대화 컨텍스트 유지', description: '최근 N개의 메시지를 컨텍스트로 유지하여 LLM에 전달한다. 토큰 제한 관리 필수.', dataDescription: 'Config: MAX_CONTEXT_MESSAGES = 10, MAX_TOKENS = 4000' },
+            { category: '대화 처리 로직', id: 'chat-2-3', title: '의도 분류 (NLU)', description: '사용자 질문의 의도를 분류한다 (법률 질문, 판례 검색, 일반 인사 등). 분류 결과에 따라 다른 처리 파이프라인 적용.', dataDescription: 'Intent Types: "legal_question" | "case_search" | "greeting" | "out_of_scope"' },
+
+            // AI 응답 생성
+            { category: 'AI 응답 생성', id: 'chat-3-1', title: 'RAG 파이프라인 구현', description: '질문을 임베딩하여 벡터 DB에서 관련 법률 문서/판례를 검색하고, 검색 결과를 LLM 프롬프트에 포함.', dataDescription: 'Flow: Query → Embedding → Vector Search (Top 5) → LLM Prompt Injection' },
+            { category: 'AI 응답 생성', id: 'chat-3-2', title: 'LLM API 호출', description: 'OpenAI/Claude API를 호출하여 법률 조언 응답을 생성한다. 시스템 프롬프트에 법률 전문가 페르소나 설정.', dataDescription: 'API: POST /v1/chat/completions, system_prompt: "당신은 대한민국 법률 전문 AI입니다..."' },
+            { category: 'AI 응답 생성', id: 'chat-3-3', title: '응답 스트리밍 표시', description: 'SSE(Server-Sent Events)를 활용하여 LLM 응답을 실시간으로 한 글자씩 표시한다.', dataDescription: 'API: stream: true, Event: onmessage → append to message buffer' },
+            { category: 'AI 응답 생성', id: 'chat-3-4', title: '관련 링크/카드 삽입', description: '응답 내에 관련 법조문, 판례 링크를 클릭 가능한 카드 형태로 삽입한다.', dataDescription: 'Component: <ReferenceCard lawId="민법390" title="민법 제390조" />' },
+
+            // 부가 기능
+            { category: '부가 기능', id: 'chat-4-1', title: '대화 내역 저장 (Export)', description: '현재 대화를 PDF, TXT, JSON 형식으로 다운로드할 수 있는 기능을 제공한다.', dataDescription: 'Formats: application/pdf, text/plain, application/json' },
+            { category: '부가 기능', id: 'chat-4-2', title: '이전 대화 불러오기', description: '사용자의 과거 채팅 세션 목록을 표시하고, 선택 시 해당 대화를 불러온다.', dataDescription: 'API: GET /api/chat/sessions?user_id=xxx' },
+            { category: '부가 기능', id: 'chat-4-3', title: '만족도 피드백 수집', description: 'AI 응답 하단에 👍/👎 버튼을 배치하여 응답 품질 피드백을 수집한다.', dataDescription: 'Schema: { message_id: string, feedback: "positive" | "negative", comment?: string }' },
+
+            // 데이터 처리
+            {
+                category: '데이터 처리',
+                id: 'chat-5-1',
+                title: '메시지 DB 저장',
+                description: '모든 대화 메시지를 "chat_messages" 테이블에 영구 저장하여 대화 이력 관리 및 분석에 활용한다.',
+                dataDescription: 'Schema: { id: uuid, session_id: string, role: "user"|"assistant", content: string, metadata_json: "{tokens: 150, model: gpt-4}", created_at: timestamp }'
+            },
+            {
+                category: '데이터 처리',
+                id: 'chat-5-2',
+                title: 'LLM 토큰 사용량 추적',
+                description: 'API 응답의 usage 필드를 파싱하여 토큰 소비량을 기록한다. 과금 및 비용 최적화에 활용.',
+                dataDescription: 'API Response: { usage: { prompt_tokens: 500, completion_tokens: 200, total_tokens: 700 } }'
+            },
+            {
+                category: '데이터 처리',
+                id: 'chat-5-3',
+                title: '벡터 DB 인덱싱',
+                description: '법률 문서, 판례를 임베딩하여 벡터 DB(Pinecone/Weaviate)에 저장한다. RAG 검색의 기반 데이터.',
+                dataDescription: 'Vector: dimension=1536 (text-embedding-ada-002), metadata: { doc_type, law_id, ... }'
+            },
+        ],
+        categories: {
+            '채팅 UI 구성': {
+                definition: '사용자와 AI 간의 자연스러운 대화 경험을 제공하는 인터페이스 레이어입니다.',
+                goal: '메시징 앱과 같은 친숙한 UX로 진입 장벽을 낮추고, 법률 상담의 부담감 해소'
+            },
+            '대화 처리 로직': {
+                definition: '입력된 자연어를 해석하고, 대화의 맥락(Context)을 유지하며 적절한 처리 파이프라인으로 라우팅하는 핵심 로직입니다.',
+                goal: '단발성 Q&A가 아닌, 문맥을 이해하는 연속적인 상담 경험 제공'
+            },
+            'AI 응답 생성': {
+                definition: 'RAG(Retrieval-Augmented Generation) 기반으로 관련 법률 지식을 검색하고, LLM을 통해 사용자 맞춤형 응답을 생성합니다.',
+                goal: '할루시네이션(Hallucination)을 최소화하고, 신뢰할 수 있는 법률 정보 기반의 응답 제공'
+            },
+            '부가 기능': {
+                definition: '대화 저장, 이력 관리, 피드백 수집 등 핵심 대화 기능을 보완하는 편의 기능입니다.',
+                goal: '일회성 상담에 그치지 않고, 지속적인 사용과 서비스 개선을 위한 데이터 확보'
+            },
+            '데이터 처리': {
+                definition: '대화 로그, 토큰 사용량, 벡터 인덱스 등 챗봇 운영에 필요한 데이터 파이프라인을 관리합니다.',
+                goal: '비용 효율적인 LLM 운영 및 검색 품질 향상을 위한 데이터 인프라 구축'
+            }
+        },
+        testCases: [
+            {
+                id: 'tc-chat-1',
+                title: '기본 법률 질문 응답',
+                precondition: '챗봇 페이지에 접속한 상태',
+                testSteps: [
+                    '1. 입력창에 "임대차 계약 위반 시 손해배상 청구 가능한가요?" 입력',
+                    '2. 전송 버튼 클릭 또는 Enter 키',
+                    '3. 타이핑 인디케이터 표시 확인',
+                    '4. AI 응답 표시 확인'
+                ],
+                expectedResult: '민법 관련 조문과 함께 손해배상 가능 여부에 대한 설명 표시',
+                priority: 'High'
+            },
+            {
+                id: 'tc-chat-2',
+                title: '대화 맥락 유지',
+                precondition: '이전 질문에 대한 응답이 표시된 상태',
+                testSteps: [
+                    '1. "그러면 어떤 증거가 필요한가요?" 후속 질문 입력',
+                    '2. 전송',
+                    '3. 응답 확인'
+                ],
+                expectedResult: '이전 대화(임대차 손해배상)의 맥락을 유지한 증거 관련 응답',
+                priority: 'High'
+            },
+            {
+                id: 'tc-chat-3',
+                title: '대화 내역 저장',
+                precondition: '최소 3개 이상의 메시지가 있는 대화 상태',
+                testSteps: [
+                    '1. "대화 내역 저장" 버튼 클릭',
+                    '2. 형식 선택 (PDF)',
+                    '3. 다운로드 파일 확인'
+                ],
+                expectedResult: '현재까지의 대화 내용이 PDF 파일로 다운로드됨',
+                priority: 'Medium'
+            },
+        ],
+        recommendedApis: [
+            {
+                name: 'OpenAI Chat Completions API',
+                provider: 'OpenAI',
+                description: 'GPT-4/GPT-4o 기반 대화형 AI. 스트리밍, Function Calling 지원. 법률 상담 챗봇의 핵심 LLM.',
+                url: 'https://platform.openai.com/docs/api-reference/chat',
+                pricing: 'GPT-4: $0.03/1K input, $0.06/1K output tokens'
+            },
+            {
+                name: 'Pinecone Vector Database',
+                provider: 'Pinecone',
+                description: '벡터 유사도 검색 전문 DB. 법률 문서/판례 임베딩 저장 및 RAG 검색에 최적.',
+                url: 'https://www.pinecone.io/',
+                pricing: 'Starter 무료 (100K 벡터), Standard $70/월'
+            }
+        ],
+    },
+    auth: {
+        title: '로그인 / 회원가입',
+        subtitle: 'Authentication System',
+        overview: '사용자 인증 및 계정 관리 시스템입니다. 이메일/비밀번호 로그인, 소셜 로그인(Google, Kakao), 회원가입, 비밀번호 재설정 기능을 제공합니다.',
+        inputDescription: '이메일, 비밀번호, 사용자 정보 (이름, 전화번호 등)',
+        outputDescription: '인증 토큰 (JWT), 사용자 세션, 권한 정보',
+        aiModel: 'N/A (보안 인증 로직)',
+        implementationSteps: ['입력 검증', '서버 인증', '토큰 발급', '세션 저장', '리다이렉트'],
+        dbTables: [
+            { name: 'users', purpose: '사용자 계정 정보' },
+            { name: 'user_sessions', purpose: '로그인 세션 관리' },
+            { name: 'password_resets', purpose: '비밀번호 재설정 토큰' }
+        ],
+        dataFlow: ['사용자 입력', '유효성 검증', 'API 인증', '토큰 저장', '홈 리다이렉트'],
+        erdDescription: 'users(1) → user_sessions(N), users(1) → password_resets(N)',
+        wireframe: `
+┌─────────────────────────────────────────────────────┐
+│  로그인                                              │
+├─────────────────────────────────────────────────────┤
+│  ┌───────────────────────────────────────────────┐  │
+│  │  🔐 LegalRisk AI                              │  │
+│  │                                               │  │
+│  │  이메일                                        │  │
+│  │  ┌─────────────────────────────────────────┐  │  │
+│  │  │ user@example.com                        │  │  │
+│  │  └─────────────────────────────────────────┘  │  │
+│  │                                               │  │
+│  │  비밀번호                                      │  │
+│  │  ┌─────────────────────────────────────────┐  │  │
+│  │  │ ••••••••                    [👁 토글]   │  │  │
+│  │  └─────────────────────────────────────────┘  │  │
+│  │                                               │  │
+│  │  [  로그인  ]                                  │  │
+│  │                                               │  │
+│  │  ─────────── 또는 ───────────                 │  │
+│  │                                               │  │
+│  │  [G Google 로그인] [K 카카오 로그인]           │  │
+│  │                                               │  │
+│  │  비밀번호 찾기  |  회원가입                    │  │
+│  └───────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────┘`,
+        useCases: [
+            { actor: '비회원', action: '이메일/비밀번호로 로그인', expected: '인증 성공 후 대시보드로 이동' },
+            { actor: '비회원', action: 'Google 소셜 로그인 클릭', expected: 'Google OAuth 팝업 후 자동 로그인' },
+            { actor: '신규 사용자', action: '회원가입 폼 제출', expected: '계정 생성 및 환영 이메일 발송' },
+            { actor: '기존 사용자', action: '비밀번호 찾기 요청', expected: '재설정 링크가 이메일로 발송됨' },
+        ],
+        checklist: [
+            // 로그인 UI
+            { category: '로그인 UI', id: 'auth-1-1', title: '이메일 입력 필드', description: '이메일 형식 유효성 검증을 포함한 입력 필드. 실시간 검증 피드백 표시.', dataDescription: 'Validation: /^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$/' },
+            { category: '로그인 UI', id: 'auth-1-2', title: '비밀번호 입력 필드', description: '비밀번호 표시/숨김 토글 버튼 포함. 최소 8자 이상 검증.', dataDescription: 'State: showPassword: boolean, min-length: 8' },
+            { category: '로그인 UI', id: 'auth-1-3', title: '로그인 버튼 및 로딩 상태', description: '클릭 시 로딩 스피너 표시, 중복 클릭 방지(disabled).', dataDescription: 'State: isLoading: boolean' },
+            { category: '로그인 UI', id: 'auth-1-4', title: '에러 메시지 표시', description: '인증 실패 시 "이메일 또는 비밀번호가 올바르지 않습니다" 등 사용자 친화적 메시지.', dataDescription: 'Error Types: "invalid_credentials", "account_locked", "network_error"' },
+
+            // 소셜 로그인
+            { category: '소셜 로그인', id: 'auth-2-1', title: 'Google OAuth 연동', description: 'Google Identity Services를 활용한 원클릭 로그인. 팝업 방식 또는 리다이렉트 방식 선택.', dataDescription: 'API: accounts.google.com/gsi/client, Scope: email, profile' },
+            { category: '소셜 로그인', id: 'auth-2-2', title: 'Kakao 로그인 연동', description: 'Kakao JavaScript SDK를 활용한 카카오 계정 로그인.', dataDescription: 'API: kauth.kakao.com/oauth/authorize, App Key 필요' },
+            { category: '소셜 로그인', id: 'auth-2-3', title: '소셜 계정 연동/해제', description: '기존 계정에 소셜 로그인 연결 또는 연결 해제 기능.', dataDescription: 'DB: users.google_id, users.kakao_id (nullable)' },
+
+            // 회원가입
+            { category: '회원가입', id: 'auth-3-1', title: '회원가입 폼 렌더링', description: '이름, 이메일, 비밀번호, 비밀번호 확인, 약관 동의 체크박스를 포함한 폼.', dataDescription: 'Fields: name, email, password, password_confirm, terms_agreed' },
+            { category: '회원가입', id: 'auth-3-2', title: '비밀번호 강도 표시기', description: '입력된 비밀번호의 강도를 시각적으로 표시 (약함/보통/강함).', dataDescription: 'Logic: length >= 12 && hasUpperCase && hasNumber && hasSpecial = "Strong"' },
+            { category: '회원가입', id: 'auth-3-3', title: '이메일 중복 확인', description: '입력된 이메일이 이미 등록되어 있는지 실시간 확인.', dataDescription: 'API: GET /api/auth/check-email?email=xxx, Response: { available: boolean }' },
+            { category: '회원가입', id: 'auth-3-4', title: '이메일 인증 발송', description: '회원가입 완료 후 인증 링크가 포함된 이메일 발송.', dataDescription: 'Email: verification_token (6자리 또는 UUID), 유효기간 24시간' },
+
+            // 비밀번호 재설정
+            { category: '비밀번호 재설정', id: 'auth-4-1', title: '비밀번호 찾기 폼', description: '이메일 입력 후 재설정 링크 발송 요청.', dataDescription: 'API: POST /api/auth/forgot-password, Body: { email: string }' },
+            { category: '비밀번호 재설정', id: 'auth-4-2', title: '재설정 토큰 검증', description: 'URL의 토큰이 유효한지 확인 (만료, 사용 여부).', dataDescription: 'Token: SHA256 hash, Expiry: 1 hour, One-time use' },
+            { category: '비밀번호 재설정', id: 'auth-4-3', title: '새 비밀번호 설정 폼', description: '새 비밀번호 입력 및 확인 필드. 기존 비밀번호와 동일 시 경고.', dataDescription: 'Validation: newPassword !== oldPasswordHash' },
+
+            // 세션 및 보안
+            {
+                category: '세션 및 보안',
+                id: 'auth-5-1',
+                title: 'JWT 토큰 발급 및 저장',
+                description: '로그인 성공 시 액세스 토큰(15분)과 리프레시 토큰(7일)을 발급하여 httpOnly 쿠키에 저장.',
+                dataDescription: 'Schema: { accessToken: JWT(15min), refreshToken: JWT(7days) }, Storage: httpOnly cookie'
+            },
+            {
+                category: '세션 및 보안',
+                id: 'auth-5-2',
+                title: '토큰 자동 갱신',
+                description: '액세스 토큰 만료 시 리프레시 토큰으로 자동 갱신. 갱신 실패 시 로그아웃 처리.',
+                dataDescription: 'API: POST /api/auth/refresh, Cookie: refreshToken → new accessToken'
+            },
+            {
+                category: '세션 및 보안',
+                id: 'auth-5-3',
+                title: '로그아웃 처리',
+                description: '클라이언트 토큰 삭제 및 서버 세션 무효화.',
+                dataDescription: 'Actions: clearCookies(), invalidateSession(sessionId), redirect("/login")'
+            },
+            {
+                category: '세션 및 보안',
+                id: 'auth-5-4',
+                title: '로그인 시도 제한',
+                description: '5회 연속 실패 시 계정 잠금 또는 CAPTCHA 표시.',
+                dataDescription: 'Config: MAX_ATTEMPTS = 5, LOCKOUT_DURATION = 15min'
+            },
+        ],
+        categories: {
+            '로그인 UI': {
+                definition: '사용자가 자격 증명을 입력하고 인증을 요청하는 진입점입니다.',
+                goal: '직관적이고 안전한 로그인 경험 제공, 실시간 피드백으로 입력 오류 최소화'
+            },
+            '소셜 로그인': {
+                definition: '외부 OAuth 제공자(Google, Kakao)를 통한 간편 인증 방식입니다.',
+                goal: '회원가입 과정 생략으로 신규 사용자 전환율 향상, 비밀번호 관리 부담 감소'
+            },
+            '회원가입': {
+                definition: '신규 사용자가 계정을 생성하고 필수 정보를 등록하는 과정입니다.',
+                goal: '최소한의 정보만 수집하여 가입 허들을 낮추고, 이메일 인증으로 유효성 확보'
+            },
+            '비밀번호 재설정': {
+                definition: '비밀번호를 분실한 사용자가 안전하게 새 비밀번호를 설정하는 셀프서비스 기능입니다.',
+                goal: '고객 지원 개입 없이 24/7 자동화된 계정 복구 제공'
+            },
+            '세션 및 보안': {
+                definition: '인증 상태를 안전하게 유지하고, 무단 접근을 방지하는 보안 인프라입니다.',
+                goal: 'JWT 기반 Stateless 인증으로 확장성 확보, 자동 갱신으로 UX 저하 방지'
+            }
+        },
+        testCases: [
+            {
+                id: 'tc-auth-1',
+                title: '정상 로그인',
+                precondition: '유효한 계정이 존재하는 상태',
+                testSteps: [
+                    '1. 로그인 페이지 접속',
+                    '2. 등록된 이메일 입력',
+                    '3. 올바른 비밀번호 입력',
+                    '4. 로그인 버튼 클릭'
+                ],
+                expectedResult: '대시보드로 리다이렉트, 사용자 이름 표시',
+                priority: 'High'
+            },
+            {
+                id: 'tc-auth-2',
+                title: '잘못된 비밀번호 에러',
+                precondition: '유효한 계정이 존재하는 상태',
+                testSteps: [
+                    '1. 등록된 이메일 입력',
+                    '2. 잘못된 비밀번호 입력',
+                    '3. 로그인 버튼 클릭'
+                ],
+                expectedResult: '"이메일 또는 비밀번호가 올바르지 않습니다" 에러 표시',
+                priority: 'High'
+            },
+            {
+                id: 'tc-auth-3',
+                title: '회원가입 및 이메일 인증',
+                precondition: '로그인 페이지에서 회원가입 링크 클릭',
+                testSteps: [
+                    '1. 이름, 이메일, 비밀번호 입력',
+                    '2. 약관 동의 체크',
+                    '3. 회원가입 버튼 클릭',
+                    '4. 이메일 수신함에서 인증 링크 클릭'
+                ],
+                expectedResult: '계정 활성화, 로그인 페이지로 리다이렉트',
+                priority: 'High'
+            },
+            {
+                id: 'tc-auth-4',
+                title: 'Google 소셜 로그인',
+                precondition: 'Google 계정 보유',
+                testSteps: [
+                    '1. "Google 로그인" 버튼 클릭',
+                    '2. Google 계정 선택 또는 로그인',
+                    '3. 권한 승인'
+                ],
+                expectedResult: '자동 로그인 후 대시보드로 이동',
+                priority: 'Medium'
+            },
+        ],
+        recommendedApis: [
+            {
+                name: 'NextAuth.js',
+                provider: 'Vercel',
+                description: 'Next.js 전용 인증 라이브러리. OAuth, 이메일/비밀번호, JWT 세션 등 다양한 인증 방식 지원.',
+                url: 'https://next-auth.js.org/',
+                pricing: '무료 (오픈소스)'
+            },
+            {
+                name: 'Firebase Authentication',
+                provider: 'Google',
+                description: '이메일/비밀번호, 소셜 로그인, 전화번호 인증 등 다양한 방식 지원. 실시간 사용자 관리 콘솔 제공.',
+                url: 'https://firebase.google.com/docs/auth',
+                pricing: '무료 (월 10K 인증까지)'
+            }
+        ],
+    },
 };
 
 type TabType = 'overview' | 'wireframe' | 'usecase' | 'checklist' | 'test';
@@ -1145,6 +1499,15 @@ export default function DocsModal({ isOpen, onClose, featureName }: DocsModalPro
     const [newTestSteps, setNewTestSteps] = useState('');
     const [newTestExpected, setNewTestExpected] = useState('');
     const [newTestPriority, setNewTestPriority] = useState<'High' | 'Medium' | 'Low'>('Medium');
+
+    // Category filter state for checklist
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+    // Report assignee name
+    const [assigneeName, setAssigneeName] = useState<string>('');
+
+    // Per-item deadline dates
+    const [itemDeadlines, setItemDeadlines] = useState<Record<string, string>>({});
 
     // Initialize checked items
     useEffect(() => {
@@ -1264,40 +1627,108 @@ export default function DocsModal({ isOpen, onClose, featureName }: DocsModalPro
         setIsSubmitting(true);
         setSubmitResult(null);
 
-        // Discord Embed 형식으로 메시지 구성
+        // Helper function to chunk array into groups (for Discord 1024 char limit)
+        const chunkItems = (items: { id?: string; title: string }[], chunkSize: number = 12) => {
+            const chunks: string[][] = [];
+            for (let i = 0; i < items.length; i += chunkSize) {
+                chunks.push(items.slice(i, i + chunkSize).map((f, idx) => {
+                    const itemId = (f as ChecklistItem).id;
+                    const deadline = itemId && itemDeadlines[itemId] ? ` 📅${itemDeadlines[itemId]}` : '';
+                    return `${i + idx + 1}. ${f.title}${deadline}`;
+                }));
+            }
+            return chunks;
+        };
+
+        // Build fields array with all items
+        const fields: { name: string; value: string; inline: boolean }[] = [];
+
+        // Assignee info (if provided)
+        if (assigneeName.trim()) {
+            fields.push({
+                name: '👤 담당자',
+                value: `**${assigneeName.trim()}**`,
+                inline: false
+            });
+        }
+
+        // Selected features - split into multiple fields if needed
+        const checkedChunks = chunkItems(checkedFeatures);
+        if (checkedChunks.length === 0) {
+            fields.push({
+                name: `✅ 선택된 기능 (0개)`,
+                value: '없음',
+                inline: false
+            });
+        } else {
+            checkedChunks.forEach((chunk, idx) => {
+                fields.push({
+                    name: idx === 0 ? `✅ 선택된 기능 (${checkedFeatures.length}개)` : `✅ 선택된 기능 (계속)`,
+                    value: chunk.join('\n'),
+                    inline: false
+                });
+            });
+        }
+
+        // Unchecked features - split into multiple fields if needed
+        const uncheckedChunks = chunkItems(uncheckedFeatures);
+        if (uncheckedChunks.length === 0) {
+            fields.push({
+                name: `⏳ 미선택 기능 (0개)`,
+                value: '없음',
+                inline: false
+            });
+        } else {
+            uncheckedChunks.forEach((chunk, idx) => {
+                fields.push({
+                    name: idx === 0 ? `⏳ 미선택 기능 (${uncheckedFeatures.length}개)` : `⏳ 미선택 기능 (계속)`,
+                    value: chunk.join('\n'),
+                    inline: false
+                });
+            });
+        }
+
+        // Completed tests
+        const completedTestChunks = chunkItems(completedTests.map(tc => ({ title: `✓ ${tc.title} [${tc.priority}]` })));
+        if (completedTestChunks.length === 0) {
+            fields.push({
+                name: `🧪 완료된 테스트 (0/${allTestCases.length})`,
+                value: '없음',
+                inline: false
+            });
+        } else {
+            completedTestChunks.forEach((chunk, idx) => {
+                fields.push({
+                    name: idx === 0 ? `🧪 완료된 테스트 (${completedTests.length}/${allTestCases.length})` : `🧪 완료된 테스트 (계속)`,
+                    value: chunk.join('\n'),
+                    inline: false
+                });
+            });
+        }
+
+        // Pending tests
+        const pendingTestChunks = chunkItems(pendingTests);
+        if (pendingTestChunks.length === 0) {
+            fields.push({
+                name: `🔬 미완료 테스트 (0개)`,
+                value: '없음',
+                inline: false
+            });
+        } else {
+            pendingTestChunks.forEach((chunk, idx) => {
+                fields.push({
+                    name: idx === 0 ? `🔬 미완료 테스트 (${pendingTests.length}개)` : `🔬 미완료 테스트 (계속)`,
+                    value: chunk.join('\n'),
+                    inline: false
+                });
+            });
+        }
+
+        // Discord Embed 형식으로 메시지 구성 (최대 25개 fields)
         const embed = {
             title: `📋 기능 정의 리포트: ${docs.title}`,
             color: 0x4F46E5, // Primary color (indigo)
-            fields: [
-                {
-                    name: `✅ 선택된 기능 (${checkedFeatures.length}개)`,
-                    value: checkedFeatures.length > 0
-                        ? checkedFeatures.slice(0, 10).map((f, i) => `${i + 1}. **${f.title}**`).join('\n') + (checkedFeatures.length > 10 ? `\n... 외 ${checkedFeatures.length - 10}개` : '')
-                        : '없음',
-                    inline: false
-                },
-                {
-                    name: `⏳ 미선택 기능 (${uncheckedFeatures.length}개)`,
-                    value: uncheckedFeatures.length > 0
-                        ? uncheckedFeatures.slice(0, 5).map((f, i) => `${i + 1}. ${f.title}`).join('\n') + (uncheckedFeatures.length > 5 ? `\n... 외 ${uncheckedFeatures.length - 5}개` : '')
-                        : '없음',
-                    inline: false
-                },
-                {
-                    name: `🧪 완료된 테스트 (${completedTests.length}/${allTestCases.length})`,
-                    value: completedTests.length > 0
-                        ? completedTests.slice(0, 5).map((tc, i) => `${i + 1}. ✓ ${tc.title} [${tc.priority}]`).join('\n') + (completedTests.length > 5 ? `\n... 외 ${completedTests.length - 5}개` : '')
-                        : '없음',
-                    inline: true
-                },
-                {
-                    name: `🔬 미완료 테스트 (${pendingTests.length}개)`,
-                    value: pendingTests.length > 0
-                        ? pendingTests.slice(0, 5).map((tc, i) => `${i + 1}. ${tc.title}`).join('\n') + (pendingTests.length > 5 ? `\n... 외 ${pendingTests.length - 5}개` : '')
-                        : '없음',
-                    inline: true
-                }
-            ],
+            fields: fields.slice(0, 25), // Discord limit: 25 fields
             footer: {
                 text: `LegalRisk AI Platform | ${new Date().toLocaleString('ko-KR')}`
             },
@@ -1892,14 +2323,49 @@ export default function DocsModal({ isOpen, onClose, featureName }: DocsModalPro
                                 <p className="text-gray-500 text-sm mb-4">
                                     구현할 기능을 선택하세요. 각 항목은 개발자가 구현해야 할 세부 기능 단위입니다.
                                 </p>
+
+                                {/* Category Filter Buttons */}
+                                <div className="flex flex-wrap gap-2 mb-6 p-3 bg-gradient-to-r from-gray-50 to-slate-50 rounded-xl border border-gray-200">
+                                    <span className="text-sm font-medium text-gray-600 mr-2 self-center">📂 카테고리:</span>
+                                    <button
+                                        onClick={() => setSelectedCategory(null)}
+                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${selectedCategory === null
+                                            ? 'bg-indigo-600 text-white shadow-md'
+                                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
+                                            }`}
+                                    >
+                                        전체 보기
+                                    </button>
+                                    {Object.keys(
+                                        allChecklist.reduce((acc, item) => {
+                                            const category = item.category || '기타 기능';
+                                            acc[category] = true;
+                                            return acc;
+                                        }, {} as Record<string, boolean>)
+                                    ).map((cat) => (
+                                        <button
+                                            key={cat}
+                                            onClick={() => setSelectedCategory(cat)}
+                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${selectedCategory === cat
+                                                ? 'bg-indigo-600 text-white shadow-md'
+                                                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
+                                                }`}
+                                        >
+                                            {cat}
+                                        </button>
+                                    ))}
+                                </div>
+
                                 <div className="space-y-8">
                                     {Object.entries(
-                                        allChecklist.reduce((acc, item) => {
-                                            const category = item.category || '기타 기능 (추가 분류 필요)';
-                                            if (!acc[category]) acc[category] = [];
-                                            acc[category].push(item);
-                                            return acc;
-                                        }, {} as Record<string, ChecklistItem[]>)
+                                        allChecklist
+                                            .filter(item => selectedCategory === null || item.category === selectedCategory || (!item.category && selectedCategory === '기타 기능'))
+                                            .reduce((acc, item) => {
+                                                const category = item.category || '기타 기능 (추가 분류 필요)';
+                                                if (!acc[category]) acc[category] = [];
+                                                acc[category].push(item);
+                                                return acc;
+                                            }, {} as Record<string, ChecklistItem[]>)
                                     ).map(([category, items]) => (
                                         <div key={category} className="bg-gray-50/50 rounded-xl p-6 border border-gray-100">
                                             <div className="mb-6">
@@ -1967,6 +2433,23 @@ export default function DocsModal({ isOpen, onClose, featureName }: DocsModalPro
                                                                         </code>
                                                                     </div>
                                                                 )}
+                                                                {/* Per-item deadline date */}
+                                                                {checkedItems[item.id] && (
+                                                                    <div className="mt-3 flex items-center gap-2">
+                                                                        <span className="text-xs text-gray-500">📅 예정일:</span>
+                                                                        <input
+                                                                            type="date"
+                                                                            value={itemDeadlines[item.id] || ''}
+                                                                            onChange={(e) => setItemDeadlines(prev => ({ ...prev, [item.id]: e.target.value }))}
+                                                                            className="px-2 py-1 text-xs bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                                        />
+                                                                        {itemDeadlines[item.id] && (
+                                                                            <span className="text-xs text-indigo-600 font-medium">
+                                                                                {new Date(itemDeadlines[item.id]).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                             {item.isCustom && (
                                                                 <button
@@ -1993,6 +2476,25 @@ export default function DocsModal({ isOpen, onClose, featureName }: DocsModalPro
                                 <p className="text-gray-600 text-sm mb-4">
                                     총 <span className="font-bold text-primary-600">{checkedCount}</span>개의 기능이 선택되었습니다.
                                 </p>
+
+                                {/* Assignee Name Input */}
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        👤 담당자 이름
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={assigneeName}
+                                        onChange={(e) => setAssigneeName(e.target.value)}
+                                        placeholder="담당자 이름을 입력하세요"
+                                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                    />
+                                    {assigneeName.trim() && (
+                                        <p className="mt-2 text-sm text-indigo-600">
+                                            ✓ 담당자: <strong>{assigneeName.trim()}</strong>
+                                        </p>
+                                    )}
+                                </div>
                                 <button
                                     onClick={handleSubmitReport}
                                     disabled={checkedCount === 0 || isSubmitting}

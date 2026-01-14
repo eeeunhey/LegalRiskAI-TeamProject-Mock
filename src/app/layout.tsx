@@ -4,6 +4,7 @@ import '@/styles/globals.css';
 import Navigation from '@/components/layout/Navigation';
 import Footer from '@/components/layout/Footer';
 import { AuthProvider } from '@/contexts/AuthContext';
+import ChatbotFloatingButton from '@/components/common/ChatbotFloatingButton';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -26,6 +27,7 @@ export default function RootLayout({
                         {children}
                     </main>
                     <Footer />
+                    <ChatbotFloatingButton />
                 </AuthProvider>
             </body>
         </html>

@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Scale, Mail, Lock, Eye, EyeOff, LogIn, AlertCircle } from 'lucide-react';
+import { Scale, Mail, Lock, Eye, EyeOff, LogIn, AlertCircle, BookOpen } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import DocsModal from '@/components/common/DocsModal';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -15,6 +16,7 @@ export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [isDocsOpen, setIsDocsOpen] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -49,6 +51,17 @@ export default function LoginPage() {
     return (
         <div className="min-h-[calc(100vh-8rem)] flex items-center justify-center px-4 py-12">
             <div className="w-full max-w-md">
+                {/* Auth Docs Button */}
+                <div className="flex justify-end mb-4">
+                    <button
+                        onClick={() => setIsDocsOpen(true)}
+                        className="flex items-center gap-2 px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-lg text-indigo-700 text-sm font-medium hover:bg-indigo-100 transition-colors"
+                    >
+                        <BookOpen className="w-4 h-4" />
+                        기능 정의서
+                    </button>
+                </div>
+
                 <div className="text-center mb-8">
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 mb-4 shadow-lg">
                         <Scale className="w-8 h-8 text-white" />
@@ -155,6 +168,13 @@ export default function LoginPage() {
                     </p>
                 </div>
             </div>
+
+            {/* Auth Docs Modal */}
+            <DocsModal
+                isOpen={isDocsOpen}
+                onClose={() => setIsDocsOpen(false)}
+                featureName="auth"
+            />
         </div>
     );
 }
