@@ -1620,25 +1620,9 @@ export default function DocsModal({ isOpen, onClose, featureName }: DocsModalPro
 
     const handleSubmitReport = async () => {
         const checkedFeatures = allChecklist.filter(item => checkedItems[item.id]);
-        const uncheckedFeatures = allChecklist.filter(item => !checkedItems[item.id]);
-        const completedTests = allTestCases.filter(tc => checkedTests[tc.id]);
-        const pendingTests = allTestCases.filter(tc => !checkedTests[tc.id]);
 
         setIsSubmitting(true);
         setSubmitResult(null);
-
-        // Helper function to chunk array into groups (for Discord 1024 char limit)
-        const chunkItems = (items: { id?: string; title: string }[], chunkSize: number = 12) => {
-            const chunks: string[][] = [];
-            for (let i = 0; i < items.length; i += chunkSize) {
-                chunks.push(items.slice(i, i + chunkSize).map((f, idx) => {
-                    const itemId = (f as ChecklistItem).id;
-                    const deadline = itemId && itemDeadlines[itemId] ? ` 📅${itemDeadlines[itemId]}` : '';
-                    return `${i + idx + 1}. ${f.title}${deadline}`;
-                }));
-            }
-            return chunks;
-        };
 
         // Build fields array with all items
         const fields: { name: string; value: string; inline: boolean }[] = [];
@@ -1660,38 +1644,34 @@ export default function DocsModal({ isOpen, onClose, featureName }: DocsModalPro
             return acc;
         }, {} as Record<string, ChecklistItem[]>);
 
-        // Create table-style output for each category
+        // Create table-style output (using markdown table)
+        let fullTable = '```\n';
+        fullTable += '┌──────────────┬────────────────────┬────────────┐\n';
+        fullTable += '│ 분류         │ 기능               │ 예정일     │\n';
+        fullTable += '├──────────────┼────────────────────┼────────────┤\n';
+
         Object.entries(groupedFeatures).forEach(([category, items]) => {
-            // Create table header
-            let tableContent = '```\n';
-            tableContent += '┌─────────────────────────────────────────────────┐\n';
-            tableContent += `│ 📂 ${category.padEnd(44)}│\n`;
-            tableContent += '├───────────────────────┬─────────────────────────┤\n';
-            tableContent += '│ 기능                  │ 예정일                  │\n';
-            tableContent += '├───────────────────────┼─────────────────────────┤\n';
-
-            items.forEach((item) => {
-                const title = item.title.length > 20 ? item.title.slice(0, 18) + '..' : item.title.padEnd(20);
-                const deadline = itemDeadlines[item.id] || '-';
-                const deadlinePad = deadline.padEnd(22);
-                tableContent += `│ ${title} │ ${deadlinePad} │\n`;
+            items.forEach((item, idx) => {
+                const catName = idx === 0 ? category.slice(0, 12).padEnd(12) : ''.padEnd(12);
+                const title = item.title.length > 18 ? item.title.slice(0, 16) + '..' : item.title.padEnd(18);
+                const deadline = (itemDeadlines[item.id] || '-').padEnd(10);
+                fullTable += `│ ${catName} │ ${title} │ ${deadline} │\n`;
             });
+        });
 
-            tableContent += '└───────────────────────┴─────────────────────────┘\n';
-            tableContent += '```';
+        fullTable += '└──────────────┴────────────────────┴────────────┘\n';
+        fullTable += '```';
 
-            fields.push({
-                name: `📌 ${category} (${items.length}개)`,
-                value: tableContent,
-                inline: false
-            });
+        fields.push({
+            name: `📋 선택된 기능 목록 (${checkedFeatures.length}개)`,
+            value: fullTable,
+            inline: false
         });
 
         // Summary field
         fields.push({
             name: '📊 요약',
-            value: `✅ 총 **${checkedFeatures.length}개** 기능 선택\n` +
-                `📂 **${Object.keys(groupedFeatures).length}개** 카테고리`,
+            value: `✅ 총 **${checkedFeatures.length}개** 기능 선택\n📂 **${Object.keys(groupedFeatures).length}개** 카테고리`,
             inline: false
         });
 
