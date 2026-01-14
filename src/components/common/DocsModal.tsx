@@ -1253,7 +1253,7 @@ export default function DocsModal({ isOpen, onClose, featureName }: DocsModalPro
     const allTestCases = [...(docs.testCases || []), ...customTests];
     const checkedTestCount = allTestCases.filter(tc => checkedTests[tc.id]).length;
 
-    const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1460796340765327464/Hb19pQmG58jxbEU0G_mNEgM3IQLxnnM-yaUwb48WtasteRyJWpahT7nwgWNsIDc2RJqE';
+    const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1460880172357128263/PZB6PyXgBBk-wdIQwJrhRjJTk2Pb7Ngsu5ZpYXOFftUzZ-qIpdU3QJf-2UtczUzvTtZ6';
 
     const handleSubmitReport = async () => {
         const checkedFeatures = allChecklist.filter(item => checkedItems[item.id]);
